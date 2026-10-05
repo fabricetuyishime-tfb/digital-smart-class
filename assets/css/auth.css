@@ -1,0 +1,103 @@
+/* ============================================================
+   Digital Smart Class - Authentication & Form Styles
+   ============================================================ */
+
+.auth-page {
+    background:
+        radial-gradient(circle at 12% 18%, rgba(37, 99, 235, 0.16), transparent 32%),
+        radial-gradient(circle at 88% 8%, rgba(212, 160, 23, 0.12), transparent 28%),
+        linear-gradient(180deg, #f8fafc 0%, #eff6ff 100%);
+    min-height: calc(100vh - 150px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1rem;
+}
+
+.auth-container {
+    width: 100%;
+    max-width: 480px;
+}
+
+.auth-box {
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid #e2e8f0;
+    border-radius: 24px;
+    padding: 2.5rem 2rem;
+    box-shadow: 0 24px 50px -24px rgba(29, 78, 216, 0.35);
+}
+
+.auth-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #0f172a;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.03em;
+}
+
+.auth-subtitle {
+    font-size: 0.95rem;
+    color: #64748b;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-form .form-group {
+    margin-bottom: 1.25rem;
+}
+
+.auth-form .form-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 0.4rem;
+}
+
+.auth-form .form-control {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    font-size: 0.95rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    background: #fbfdff;
+    color: #0f172a;
+    transition: all 0.2s ease;
+}
+
+.auth-form .form-control:focus {
+    outline: none;
+    border-color: #1d4ed8;
+    box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.14);
+}
+
+.auth-btn-submit {
+    width: 100%;
+    padding: 0.9rem;
+    font-size: 1rem;
+    font-weight: 700;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+    color: #ffffff;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 1rem;
+}
+
+.auth-btn-submit:hover {
+    background: #1e3a8a;
+}
+
+.auth-links {
+    margin-top: 1.75rem;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.auth-links a {
+    color: #1d4ed8;
+    font-weight: 700;
+}

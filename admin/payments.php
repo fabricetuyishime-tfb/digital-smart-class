@@ -7,6 +7,26 @@ require_role(['admin', 'accountant']);
 $user = current_user();
 $page_title = "Manage Payments — Digital Smart Class";
 
+if (isset($_GET['export']) && $_GET['export'] === 'csv' && $db_connected && $pdo) {
+    $exportStmt = $pdo->query("
+        SELECT p.id, u.full_name AS student, u.email, c.title AS course, p.amount,
+               p.currency, p.payment_method, p.transaction_ref, p.status, p.created_at
+        FROM payments p
+        JOIN users u ON u.id = p.user_id
+        JOIN courses c ON c.id = p.course_id
+        ORDER BY p.created_at DESC
+    ");
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="digital-smart-class-payments.csv"');
+    $output = fopen('php://output', 'w');
+    fputcsv($output, ['ID', 'Student', 'Email', 'Course', 'Amount', 'Currency', 'Method', 'Transaction Reference', 'Status', 'Created']);
+    while ($row = $exportStmt->fetch(PDO::FETCH_ASSOC)) {
+        fputcsv($output, $row);
+    }
+    fclose($output);
+    exit;
+}
+
 // Handle Approval / Rejection
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_id'], $_POST['action'])) {
     $payId = (int)$_POST['payment_id'];
@@ -88,6 +108,9 @@ require_once __DIR__ . '/../includes/header.php';
                 <h2>Payment Approvals & Ledger</h2>
                 <p style="color: var(--gray-500); font-size: 0.95rem;">Verify transaction references from MTN MoMo, Airtel Money, and bank deposits.</p>
             </div>
+            <a href="<?= site_url('admin/payments.php?export=csv'); ?>" class="btn btn-outline btn-sm">
+                <i class="fas fa-file-csv"></i> Export CSV
+            </a>
         </div>
 
         <div class="table-card">

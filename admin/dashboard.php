@@ -10,6 +10,9 @@ $coursesCount = 80;
 $pendingTeachersCount = 6;
 $pendingPaymentsCount = 12;
 $totalRevenueFormatted = "5.4M RWF";
+$activeEnrollmentsCount = 0;
+$completedEnrollmentsCount = 0;
+$recentPayments = [];
 
 if ($db_connected && $pdo) {
     try {
@@ -30,6 +33,17 @@ if ($db_connected && $pdo) {
 
         $rev = $pdo->query("SELECT SUM(amount) FROM payments WHERE status = 'approved'")->fetchColumn();
         if ($rev > 0) $totalRevenueFormatted = number_format($rev) . " RWF";
+
+        $activeEnrollmentsCount = (int)$pdo->query("SELECT COUNT(*) FROM enrollments WHERE status = 'active'")->fetchColumn();
+        $completedEnrollmentsCount = (int)$pdo->query("SELECT COUNT(*) FROM enrollments WHERE status = 'completed'")->fetchColumn();
+        $recentPayments = $pdo->query("
+            SELECT p.amount, p.status, p.created_at, u.full_name, c.title
+            FROM payments p
+            JOIN users u ON u.id = p.user_id
+            JOIN courses c ON c.id = p.course_id
+            ORDER BY p.created_at DESC
+            LIMIT 5
+        ")->fetchAll();
     } catch (PDOException $e) {
         // Fallback to Section 14 mock values
     }
@@ -106,6 +120,42 @@ require_once __DIR__ . '/../includes/header.php';
                 <div class="stat-box-value" style="color: var(--success);"><?= $totalRevenueFormatted; ?></div>
             </div>
         </div>
+
+        <div class="dashboard-grid-stats" style="grid-template-columns: repeat(2, minmax(180px, 1fr)); max-width: 540px; margin-bottom: 2.5rem;">
+            <div class="stat-box">
+                <div class="stat-box-title">Active Enrollments</div>
+                <div class="stat-box-value" style="color: var(--secondary);"><?= number_format($activeEnrollmentsCount); ?></div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-box-title">Completed Enrollments</div>
+                <div class="stat-box-value" style="color: var(--violet);"><?= number_format($completedEnrollmentsCount); ?></div>
+            </div>
+        </div>
+
+        <?php if (!empty($recentPayments)): ?>
+            <div class="table-card" style="max-width: 900px; margin-bottom: 2.5rem;">
+                <div class="table-card-header">
+                    <h3 style="font-size: 1.15rem; font-weight: 700;">Recent Payment Activity</h3>
+                    <a href="<?= site_url('admin/payments.php'); ?>" class="btn btn-outline btn-sm">View all payments</a>
+                </div>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>Student</th><th>Course</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+                        <tbody>
+                            <?php foreach ($recentPayments as $payment): ?>
+                                <tr>
+                                    <td><?= e($payment['full_name']); ?></td>
+                                    <td><?= e($payment['title']); ?></td>
+                                    <td><?= format_money($payment['amount'], 'RWF'); ?></td>
+                                    <td><span class="badge badge-<?= e($payment['status']); ?>"><?= e(ucfirst($payment['status'])); ?></span></td>
+                                    <td><?= date('d M Y', strtotime($payment['created_at'])); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        <?php endif; ?>
 
         <!-- QUICK ACTIONS (Section 14 Mockup) -->
         <div style="margin-bottom: 2.5rem;">

@@ -119,23 +119,32 @@ require_once __DIR__ . '/includes/header.php';
         </form>
 
         <div class="demo-panel">
-            <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-500); margin-bottom: 0.75rem; text-align: center;">
-                Quick demo accounts
+            <div class="demo-heading">
+                <span class="demo-icon"><i class="fas fa-wand-magic-sparkles"></i></span>
+                <span>
+                    <strong>Try the demo</strong>
+                    <small>Choose a role to sign in instantly</small>
+                </span>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                <button type="button" class="btn btn-outline btn-sm" onclick="fillLogin('erc@gmail.com')">
-                    👑 Admin
+            <div class="demo-grid">
+                <button type="button" class="demo-account demo-admin" onclick="demoLogin('erc@gmail.com')">
+                    <span class="demo-account-icon"><i class="fas fa-crown"></i></span>
+                    <span><strong>Admin</strong><small>Full access</small></span>
                 </button>
-                <button type="button" class="btn btn-outline btn-sm" onclick="fillLogin('teacher@digitalsmart.rw')">
-                    👨‍🏫 Teacher
+                <button type="button" class="demo-account demo-teacher" onclick="demoLogin('teacher@digitalsmart.rw')">
+                    <span class="demo-account-icon"><i class="fas fa-chalkboard-teacher"></i></span>
+                    <span><strong>Teacher</strong><small>Course tools</small></span>
                 </button>
-                <button type="button" class="btn btn-outline btn-sm" onclick="fillLogin('student@digitalsmart.rw')">
-                    🎓 Student
+                <button type="button" class="demo-account demo-student" onclick="demoLogin('student@digitalsmart.rw')">
+                    <span class="demo-account-icon"><i class="fas fa-graduation-cap"></i></span>
+                    <span><strong>Student</strong><small>Learning area</small></span>
                 </button>
-                <button type="button" class="btn btn-outline btn-sm" onclick="fillLogin('accountant@digitalsmart.rw')">
-                    💰 Accountant
+                <button type="button" class="demo-account demo-accountant" onclick="demoLogin('accountant@digitalsmart.rw')">
+                    <span class="demo-account-icon"><i class="fas fa-wallet"></i></span>
+                    <span><strong>Accountant</strong><small>Finance tools</small></span>
                 </button>
             </div>
+            <p class="demo-password"><i class="fas fa-key"></i> Demo password: <code>Password@123</code></p>
         </div>
 
         <div style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem;">
@@ -145,9 +154,10 @@ require_once __DIR__ . '/includes/header.php';
 </div>
 
 <script>
-function fillLogin(email) {
+function demoLogin(email) {
     document.getElementById('email').value = email;
     document.getElementById('password').value = 'Password@123';
+    document.querySelector('.auth-card form').submit();
 }
 </script>
 

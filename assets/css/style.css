@@ -857,16 +857,30 @@ img {
     align-items: center;
     justify-content: center;
     padding: 3rem 1.5rem;
+    background:
+        radial-gradient(circle at 8% 20%, rgba(14, 165, 233, 0.16), transparent 26%),
+        radial-gradient(circle at 92% 78%, rgba(124, 58, 237, 0.14), transparent 28%);
 }
 
 .auth-card {
-    background: rgba(255, 255, 255, 0.92);
-    border: 1px solid var(--gray-200);
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(147, 197, 253, 0.55);
     border-radius: 24px;
     box-shadow: var(--shadow-xl);
     width: 100%;
     max-width: 460px;
     padding: 2.4rem 2.1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-card::before {
+    content: "";
+    display: block;
+    height: 5px;
+    position: absolute;
+    inset: 0 0 auto;
+    background: linear-gradient(90deg, var(--primary), var(--secondary), var(--violet), var(--accent));
 }
 
 .auth-header {
@@ -931,8 +945,98 @@ textarea.form-control {
 
 .demo-panel {
     margin-top: 1.7rem;
-    padding-top: 1.4rem;
-    border-top: 1px dashed var(--gray-300);
+    padding: 1.1rem;
+    border: 1px solid #bfdbfe;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #eff6ff 0%, #f5f3ff 100%);
+}
+
+.demo-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    color: var(--gray-800);
+    margin-bottom: 0.85rem;
+}
+
+.demo-heading strong,
+.demo-heading small,
+.demo-account strong,
+.demo-account small {
+    display: block;
+}
+
+.demo-heading small,
+.demo-account small {
+    color: var(--gray-500);
+    font-size: 0.7rem;
+    line-height: 1.35;
+}
+
+.demo-icon {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--violet), var(--primary));
+}
+
+.demo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.55rem;
+}
+
+.demo-account {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.65rem;
+    border: 1px solid var(--gray-200);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.86);
+    color: var(--gray-800);
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    transition: var(--transition);
+}
+
+.demo-account:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary);
+    box-shadow: var(--shadow-md);
+}
+
+.demo-account-icon {
+    width: 29px;
+    height: 29px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    color: #fff;
+    font-size: 0.75rem;
+}
+
+.demo-admin .demo-account-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.demo-teacher .demo-account-icon { background: linear-gradient(135deg, #0ea5e9, #2563eb); }
+.demo-student .demo-account-icon { background: linear-gradient(135deg, #10b981, #059669); }
+.demo-accountant .demo-account-icon { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+
+.demo-password {
+    margin: 0.85rem 0 0;
+    color: var(--gray-600);
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+.demo-password code {
+    color: var(--primary-hover);
+    font-weight: 800;
 }
 
 /* ================= Dashboard ================= */

@@ -1,6 +1,7 @@
 @echo off
 title Digital Smart Class — Command Prompt Setup & Runner
 color 0b
+cd /d "%~dp0"
 
 echo =====================================================================
 echo           DIGITAL SMART CLASS — COMMAND PROMPT MANAGER
@@ -36,14 +37,17 @@ if "%choice%"=="1" (
     echo Open your browser and navigate to: http://localhost:8000
     echo Press Ctrl+C in this CMD window anytime to stop the server.
     echo.
-    where php >nul 2>&1
-    if %errorlevel% equ 0 (
-        php -S localhost:8000
-    ) else if exist "C:\xampp\php\php.exe" (
-        C:\xampp\php\php.exe -S localhost:8000
+    if exist "C:\xampp\php\php.exe" (
+        echo Using XAMPP PHP: C:\xampp\php\php.exe
+        "C:\xampp\php\php.exe" -S localhost:8000 -t "%~dp0"
     ) else (
-        echo Error: PHP executable not found. Please install XAMPP or PHP.
-        pause
+        where php >nul 2>&1
+        if %errorlevel% equ 0 (
+            php -S localhost:8000 -t "%~dp0"
+        ) else (
+            echo Error: PHP executable not found. Install XAMPP or add PHP to PATH.
+            pause
+        )
     )
     goto end
 )

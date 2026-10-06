@@ -282,16 +282,20 @@ An interactive CMD menu will let you start the server or import the database in 
 
 ### Option 2: Run via PHP Built-in Server
 ```cmd
-cd "c:\Users\TUYISHIME Fabrice\Desktop\sdc"
-php -S localhost:8000
+cd /d "C:\Users\TUYISHIME Fabrice\OneDrive\Desktop\sdc"
+C:\xampp\php\php.exe -S localhost:8000 -t .
 ```
 Then visit:
 👉 **`http://localhost:8000`**
 
+If PHP is already added to your PATH, you can use `php -S localhost:8000 -t .`
+instead. The included `setup.bat` detects XAMPP automatically, even when PHP is
+not on the Windows PATH.
+
 ### Option 3: Run via XAMPP Apache
 ```cmd
 if not exist "C:\xampp\htdocs\digital-smart-class" mkdir "C:\xampp\htdocs\digital-smart-class"
-xcopy /E /I /Y "c:\Users\TUYISHIME Fabrice\Desktop\sdc" "C:\xampp\htdocs\digital-smart-class"
+xcopy /E /I /Y "C:\Users\TUYISHIME Fabrice\OneDrive\Desktop\sdc" "C:\xampp\htdocs\digital-smart-class"
 ```
 Import database in CMD:
 ```cmd

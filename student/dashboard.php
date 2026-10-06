@@ -9,6 +9,7 @@ $enrolledCoursesCount = 0;
 $completedCoursesCount = 0;
 $activeCourse = null;
 $recommendedCourses = [];
+$announcements = [];
 
 if ($db_connected && $pdo) {
     try {
@@ -38,9 +39,40 @@ if ($db_connected && $pdo) {
         ");
         $recStmt->execute(['uid' => $user['id']]);
         $recommendedCourses = $recStmt->fetchAll();
+
+        $announcementStmt = $pdo->prepare("
+            SELECT id, title, message, link, is_read, created_at
+            FROM notifications
+            WHERE user_id = :uid
+            ORDER BY is_read ASC, created_at DESC
+            LIMIT 4
+        ");
+        $announcementStmt->execute(['uid' => $user['id']]);
+        $announcements = $announcementStmt->fetchAll();
     } catch (PDOException $e) {
         // Fallback demo metrics
     }
+}
+
+if (empty($announcements)) {
+    $announcements = [
+        [
+            'id' => 0,
+            'title' => 'Welcome to your learning space',
+            'message' => 'Explore your courses, continue your lessons, and check back here for important updates from your instructors.',
+            'link' => 'student/courses.php',
+            'is_read' => 0,
+            'created_at' => date('Y-m-d H:i:s')
+        ],
+        [
+            'id' => 0,
+            'title' => 'Keep your learning streak alive',
+            'message' => 'Complete one lesson today and keep building your skills in YouTube, Shorts, and AI video creation.',
+            'link' => 'student/progress.php',
+            'is_read' => 1,
+            'created_at' => date('Y-m-d H:i:s', strtotime('-1 day'))
+        ]
+    ];
 }
 
 // Demo fallback if student has no enrollments yet
@@ -120,6 +152,44 @@ require_once __DIR__ . '/../includes/header.php';
                 <div class="stat-box-value" style="color: var(--success);"><?= $completedCoursesCount ?: 1; ?></div>
             </div>
         </div>
+
+        <section class="student-announcements" aria-labelledby="announcements-title">
+            <div class="student-announcements-header">
+                <div>
+                    <span class="announcement-eyebrow"><i class="fas fa-sparkles"></i> Stay up to date</span>
+                    <h3 id="announcements-title">Latest Announcements</h3>
+                    <p>Important updates and helpful messages for your learning journey.</p>
+                </div>
+                <a href="<?= site_url('student/notifications.php'); ?>" class="btn btn-outline btn-sm">
+                    <i class="fas fa-bell"></i> View all
+                </a>
+            </div>
+
+            <div class="announcement-list">
+                <?php foreach ($announcements as $announcement): ?>
+                    <article class="announcement-card <?= empty($announcement['is_read']) ? 'announcement-unread' : ''; ?>">
+                        <div class="announcement-card-icon">
+                            <i class="fas <?= empty($announcement['is_read']) ? 'fa-bullhorn' : 'fa-book-open'; ?>"></i>
+                        </div>
+                        <div class="announcement-card-content">
+                            <div class="announcement-card-meta">
+                                <span class="announcement-label"><?= empty($announcement['is_read']) ? 'New update' : 'Learning note'; ?></span>
+                                <time datetime="<?= e($announcement['created_at']); ?>">
+                                    <?= date('d M Y', strtotime($announcement['created_at'])); ?>
+                                </time>
+                            </div>
+                            <h4><?= e($announcement['title']); ?></h4>
+                            <p><?= e($announcement['message']); ?></p>
+                            <?php if (!empty($announcement['link'])): ?>
+                                <a href="<?= site_url($announcement['link']); ?>" class="announcement-link">
+                                    Explore update <i class="fas fa-arrow-right"></i>
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        </section>
 
         <!-- Continue Learning Box (Section 7 Mockup) -->
         <div style="margin-bottom: 2.5rem;">

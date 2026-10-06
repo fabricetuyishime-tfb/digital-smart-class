@@ -72,11 +72,25 @@
     .dashboard-main {
         padding: 1.4rem 1rem;
     }
+
+    .student-announcements {
+        padding: 1rem;
+    }
+
+    .student-announcements-header {
+        flex-direction: column;
+    }
 }
 
 @media (max-width: 480px) {
     .stats-grid,
     .dashboard-grid-stats {
         grid-template-columns: 1fr;
+    }
+
+    .announcement-card-meta {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.15rem;
     }
 }

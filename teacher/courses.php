@@ -80,6 +80,9 @@ require_once __DIR__ . '/../includes/header.php';
                                     <a href="<?= site_url('student/course-details.php?id=' . $c['id']); ?>" class="btn btn-sm btn-outline">
                                         <i class="fas fa-eye"></i> View
                                     </a>
+                                    <a href="<?= site_url('teacher/modules.php?course_id=' . $c['id']); ?>" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-video"></i> Manage Lessons
+                                    </a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

@@ -14,7 +14,7 @@ $success = null;
 $categories = [];
 if ($db_connected && $pdo) {
     try {
-        $categories = $pdo->query("SELECT * FROM categories ORDER BY id ASC")->fetchAll();
+        $categories = $pdo->query("SELECT * FROM course_categories ORDER BY id ASC")->fetchAll();
     } catch (PDOException $e) {
         $categories = [];
     }

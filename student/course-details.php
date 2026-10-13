@@ -14,7 +14,7 @@ if ($db_connected && $pdo) {
         $stmt = $pdo->prepare("
             SELECT c.*, cat.name as category_name, u.full_name as instructor_name, u.bio as instructor_bio
             FROM courses c
-            LEFT JOIN categories cat ON c.category_id = cat.id
+            LEFT JOIN course_categories cat ON c.category_id = cat.id
             LEFT JOIN users u ON c.teacher_id = u.id
             WHERE c.id = :id
             LIMIT 1

@@ -30,7 +30,7 @@ if ($db_connected && $pdo) {
             SELECT c.*, cat.name as category_name, u.full_name as instructor_name,
                    (SELECT COUNT(*) FROM enrollments e WHERE e.course_id = c.id AND e.status = 'active') as active_students
             FROM courses c
-            LEFT JOIN categories cat ON c.category_id = cat.id
+            LEFT JOIN course_categories cat ON c.category_id = cat.id
             LEFT JOIN users u ON c.teacher_id = u.id
             ORDER BY c.id ASC
         ");

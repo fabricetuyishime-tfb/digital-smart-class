@@ -214,7 +214,15 @@ require_once __DIR__ . '/../includes/header.php';
             <!-- Video Player (Section 10 Mockup) -->
             <div class="video-container">
                 <?php if (!empty($currentLesson['video_url'])): ?>
-                    <iframe src="<?= e($currentLesson['video_url']); ?>" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    <?php $isUploadedVideo = (bool)preg_match('/\.(mp4|webm|ogg)$/i', $currentLesson['video_url']); ?>
+                    <?php if ($isUploadedVideo): ?>
+                        <video controls preload="metadata" style="width: 100%; height: 100%;">
+                            <source src="<?= e(site_url($currentLesson['video_url'])); ?>">
+                            Your browser does not support this video format.
+                        </video>
+                    <?php else: ?>
+                        <iframe src="<?= e($currentLesson['video_url']); ?>" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    <?php endif; ?>
                 <?php else: ?>
                     <div class="video-placeholder">
                         <i class="fas fa-play-circle" style="font-size: 4.5rem; color: var(--primary); margin-bottom: 1rem; opacity: 0.9;"></i>

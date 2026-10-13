@@ -3,6 +3,7 @@ require_once __DIR__ . '/../includes/teacher-auth.php';
 $user = current_user();
 
 $moduleId = isset($_GET['module_id']) ? (int)$_GET['module_id'] : 1;
+$error = null;
 
 // Handle Add Lesson
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['lesson_title'])) {
@@ -12,7 +13,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['lesson_title'])) {
     $content = trim($_POST['content'] ?? '');
     $isPreview = isset($_POST['is_free_preview']) ? 1 : 0;
 
-    if (!empty($title) && $db_connected && $pdo) {
+    if (!empty($_FILES['video_file']['name']) && $_FILES['video_file']['error'] === UPLOAD_ERR_OK) {
+        $allowedExtensions = ['mp4', 'webm', 'ogg'];
+        $extension = strtolower(pathinfo($_FILES['video_file']['name'], PATHINFO_EXTENSION));
+        if (!in_array($extension, $allowedExtensions, true)) {
+            $error = 'Video files must be MP4, WebM, or OGG format.';
+        } else {
+            $targetDir = __DIR__ . '/../uploads/videos/';
+            if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
+            $videoName = 'lesson_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
+            if (move_uploaded_file($_FILES['video_file']['tmp_name'], $targetDir . $videoName)) {
+                $videoUrl = 'uploads/videos/' . $videoName;
+            } else {
+                $error = 'The video upload could not be saved.';
+            }
+        }
+    }
+
+    if (!$error && !empty($title) && $db_connected && $pdo) {
         $stmt = $pdo->prepare("
             INSERT INTO lessons (module_id, title, content, video_url, duration_minutes, is_free_preview)
             VALUES (:mid, :title, :content, :url, :dur, :prev)
@@ -80,7 +98,10 @@ require_once __DIR__ . '/../includes/header.php';
         <!-- Add Lesson Form -->
         <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; max-width: 750px;">
             <h4 style="font-weight: 700; color: #0f172a; margin-bottom: 1.25rem;">Add New Video Lesson</h4>
-            <form action="" method="POST">
+            <?php if ($error): ?>
+                <div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> <?= e($error); ?></div>
+            <?php endif; ?>
+            <form action="" method="POST" enctype="multipart/form-data">
                 <div class="form-group">
                     <label class="form-label">Lesson Title *</label>
                     <input type="text" name="lesson_title" class="form-control" required placeholder="e.g. Lesson 5: Recording Shorts with Smartphone">
@@ -88,13 +109,19 @@ require_once __DIR__ . '/../includes/header.php';
 
                 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
                     <div class="form-group">
-                        <label class="form-label">Video Embed URL (YouTube/Vimeo/MP4)</label>
+                        <label class="form-label">Video URL (optional)</label>
                         <input type="url" name="video_url" class="form-control" placeholder="https://www.youtube-nocookie.com/embed/...">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Duration (Minutes)</label>
                         <input type="number" name="duration_minutes" class="form-control" value="20">
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Or Upload Video (optional)</label>
+                    <input type="file" name="video_file" class="form-control" accept="video/mp4,video/webm,video/ogg">
+                    <small style="color: #64748b;">Supported formats: MP4, WebM, OGG. Uploading a file replaces the URL above.</small>
                 </div>
 
                 <div class="form-group">

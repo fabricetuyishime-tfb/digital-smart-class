@@ -60,7 +60,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
         } catch (PDOException $e) {
-            $error = "Registration error: " . $e->getMessage();
+            log_database_error('Register user', $e);
+            $error = 'Your account could not be created. Check the details and try again.';
         }
     } else {
         // Preview mode registration

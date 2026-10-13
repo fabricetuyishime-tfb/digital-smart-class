@@ -304,3 +304,13 @@ C:\xampp\mysql\bin\mysql.exe -u root digital_smart_class < database\digital_smar
 ```
 Then visit:
 👉 **`http://localhost/digital-smart-class/`**
+
+## Manual Smoke Tests
+
+Run these checks after importing the database and starting Apache/MySQL:
+
+1. Sign in as a student and confirm the student dashboard opens.
+2. Sign in as a teacher, create a course, and confirm it appears under **My Courses**.
+3. Create a module and lesson for that course; try both a video URL and a small MP4 upload, then confirm the lesson appears.
+4. Open the course as an enrolled student and verify the video loads and lesson progress can be saved.
+5. With two teacher accounts, try opening the other teacher's course/module by changing the URL ID; expect a not-found response and no changes to their content. On a database failure, the page should show a generic message while technical details go to the PHP error log.

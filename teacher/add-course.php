@@ -62,12 +62,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: " . site_url('teacher/courses.php'));
             exit;
         } catch (PDOException $e) {
-            $error = "Database error: " . $e->getMessage();
+            log_database_error('Create course', $e);
+            $error = 'The course could not be saved. Please check the details and try again.';
         }
     } else {
-        set_flash('success', "Course saved in preview mode!");
-        header("Location: " . site_url('teacher/courses.php'));
-        exit;
+        $error = 'Course creation requires a database connection. Start MySQL and try again.';
     }
 }
 

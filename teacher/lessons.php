@@ -5,6 +5,30 @@ $user = current_user();
 $moduleId = isset($_GET['module_id']) ? (int)$_GET['module_id'] : 1;
 $error = null;
 
+if (!$db_connected || !$pdo) {
+    http_response_code(503);
+    exit('Lesson management is unavailable while the database is disconnected. Start MySQL and try again.');
+}
+
+if ($db_connected && $pdo) {
+    try {
+        $accessStmt = $pdo->prepare("SELECT m.id FROM modules m JOIN courses c ON c.id = m.course_id WHERE m.id = :mid AND (c.teacher_id = :tid OR :is_admin = 1) LIMIT 1");
+        $accessStmt->execute([
+            'mid' => $moduleId,
+            'tid' => $user['id'],
+            'is_admin' => $user['role'] === 'admin' ? 1 : 0,
+        ]);
+        if (!$accessStmt->fetchColumn()) {
+            http_response_code(404);
+            exit('Module not found.');
+        }
+    } catch (PDOException $e) {
+        log_database_error('Verify module ownership', $e);
+        http_response_code(500);
+        exit('Unable to load this module right now. Please try again later.');
+    }
+}
+
 // Handle Add Lesson
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['lesson_title'])) {
     $title = trim($_POST['lesson_title']);
@@ -31,21 +55,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['lesson_title'])) {
     }
 
     if (!$error && !empty($title) && $db_connected && $pdo) {
-        $stmt = $pdo->prepare("
+        try {
+            $stmt = $pdo->prepare("
             INSERT INTO lessons (module_id, title, content, video_url, duration_minutes, is_free_preview)
             VALUES (:mid, :title, :content, :url, :dur, :prev)
         ");
-        $stmt->execute([
-            'mid' => $moduleId,
-            'title' => $title,
-            'content' => $content,
-            'url' => $videoUrl,
-            'dur' => $duration,
-            'prev' => $isPreview
-        ]);
-        set_flash('success', 'Lesson added to module successfully!');
-        header("Location: " . site_url('teacher/lessons.php?module_id=' . $moduleId));
-        exit;
+            $stmt->execute([
+                'mid' => $moduleId,
+                'title' => $title,
+                'content' => $content,
+                'url' => $videoUrl,
+                'dur' => $duration,
+                'prev' => $isPreview
+            ]);
+            set_flash('success', 'Lesson added to module successfully!');
+            header("Location: " . site_url('teacher/lessons.php?module_id=' . $moduleId));
+            exit;
+        } catch (PDOException $e) {
+            log_database_error('Create lesson', $e);
+            $error = 'The lesson could not be saved. Please try again.';
+        }
     }
 }
 
@@ -57,6 +86,7 @@ if ($db_connected && $pdo) {
         $lStmt->execute(['mid' => $moduleId]);
         $lessons = $lStmt->fetchAll();
     } catch (PDOException $e) {
+        log_database_error('Load module lessons', $e);
         $lessons = [];
     }
 }
@@ -153,16 +183,7 @@ require_once __DIR__ . '/../includes/header.php';
                     </thead>
                     <tbody>
                         <?php if (empty($lessons)): ?>
-                            <tr>
-                                <td>Lesson 1: Understanding Shorts Ecosystem</td>
-                                <td>18 mins</td>
-                                <td><span class="badge" style="background: #e0f2fe; color: #0369a1;">Free Preview</span></td>
-                            </tr>
-                            <tr>
-                                <td>Lesson 2: 3-Second Retention Hooks</td>
-                                <td>22 mins</td>
-                                <td><span class="badge badge-active">Protected</span></td>
-                            </tr>
+                            <tr><td colspan="3">No lessons yet. Add a video lesson above.</td></tr>
                         <?php else: ?>
                             <?php foreach ($lessons as $l): ?>
                                 <tr>

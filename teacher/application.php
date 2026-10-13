@@ -107,7 +107,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
         } catch (PDOException $e) {
-            $error = "Submission error: " . $e->getMessage();
+            log_database_error('Submit teacher application', $e);
+            $error = 'Your application could not be submitted. Please try again.';
         }
     } else {
         set_flash('success', "Teacher application submitted in Preview Mode! Awaiting admin approval.");

@@ -74,7 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             header("Location: " . site_url('student/payment.php?course_id=' . $course['id']));
             exit;
         } catch (PDOException $e) {
-            set_flash('error', "Enrollment error: " . $e->getMessage());
+            log_database_error('Enroll in course', $e);
+            set_flash('error', 'Enrollment could not be completed. Please try again.');
         }
     } else {
         set_flash('success', "Enrolled in preview mode! Please review the payment options.");

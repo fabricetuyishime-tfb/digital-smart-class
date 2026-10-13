@@ -21,6 +21,11 @@ function format_money($amount, $currency = 'RWF') {
     return number_format((float)$amount, 0, '.', ',') . ' ' . $currency;
 }
 
+/** Log database details for maintainers without exposing them to users. */
+function log_database_error($context, Throwable $exception) {
+    error_log('[Digital Smart Class] ' . $context . ': ' . $exception->getMessage());
+}
+
 /**
  * Set a session flash message
  */

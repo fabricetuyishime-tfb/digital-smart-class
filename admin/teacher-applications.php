@@ -30,7 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['app_id'], $_POST['act
             header("Location: " . site_url('admin/teacher-applications.php'));
             exit;
         } catch (PDOException $e) {
-            set_flash('error', "Database error: " . $e->getMessage());
+            log_database_error('Review teacher application', $e);
+            set_flash('error', 'The teacher application could not be updated. Please try again.');
         }
     } else {
         set_flash('success', "Teacher application marked as " . strtoupper($newStatus) . " (Preview Mode)!");

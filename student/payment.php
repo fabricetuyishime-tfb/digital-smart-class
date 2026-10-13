@@ -73,7 +73,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: " . site_url('student/payment.php'));
             exit;
         } catch (PDOException $e) {
-            $error = "Payment submission error: " . $e->getMessage();
+            log_database_error('Submit payment', $e);
+            $error = 'Your payment details could not be submitted. Please try again.';
         }
     } else {
         set_flash('success', "Payment proof recorded (Preview Mode)! Once approved, you will have instant access.");

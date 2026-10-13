@@ -3,16 +3,46 @@ require_once __DIR__ . '/../includes/teacher-auth.php';
 $user = current_user();
 
 $courseId = isset($_GET['course_id']) ? (int)$_GET['course_id'] : 1;
+$error = null;
+
+if (!$db_connected || !$pdo) {
+    http_response_code(503);
+    exit('Course management is unavailable while the database is disconnected. Start MySQL and try again.');
+}
+
+if ($db_connected && $pdo) {
+    try {
+        $accessStmt = $pdo->prepare("SELECT id FROM courses WHERE id = :cid AND (teacher_id = :tid OR :is_admin = 1) LIMIT 1");
+        $accessStmt->execute([
+            'cid' => $courseId,
+            'tid' => $user['id'],
+            'is_admin' => $user['role'] === 'admin' ? 1 : 0,
+        ]);
+        if (!$accessStmt->fetchColumn()) {
+            http_response_code(404);
+            exit('Course not found.');
+        }
+    } catch (PDOException $e) {
+        log_database_error('Verify course ownership', $e);
+        http_response_code(500);
+        exit('Unable to load this course right now. Please try again later.');
+    }
+}
 
 // Handle Add Module
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['module_title'])) {
     $title = trim($_POST['module_title']);
     if (!empty($title) && $db_connected && $pdo) {
-        $stmt = $pdo->prepare("INSERT INTO modules (course_id, title, order_num) VALUES (:cid, :title, 1)");
-        $stmt->execute(['cid' => $courseId, 'title' => $title]);
-        set_flash('success', 'New module added successfully!');
-        header("Location: " . site_url('teacher/modules.php?course_id=' . $courseId));
-        exit;
+        try {
+            $stmt = $pdo->prepare("INSERT INTO modules (course_id, title, order_num) VALUES (:cid, :title, 1)");
+            $stmt->execute(['cid' => $courseId, 'title' => $title]);
+            set_flash('success', 'New module added successfully!');
+            header("Location: " . site_url('teacher/modules.php?course_id=' . $courseId));
+            exit;
+        } catch (PDOException $e) {
+            log_database_error('Create course module', $e);
+            $error = 'The module could not be saved. Please try again.';
+        }
     }
 }
 
@@ -29,6 +59,7 @@ if ($db_connected && $pdo) {
         $mStmt->execute(['cid' => $courseId]);
         $modules = $mStmt->fetchAll();
     } catch (PDOException $e) {
+        log_database_error('Load course modules', $e);
         $modules = [];
     }
 }
@@ -70,6 +101,9 @@ require_once __DIR__ . '/../includes/header.php';
         <!-- Add Module Form -->
         <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; max-width: 600px;">
             <h4 style="font-weight: 700; color: #0f172a; margin-bottom: 1rem;">Add New Module</h4>
+            <?php if ($error): ?>
+                <div class="alert alert-danger"><?= e($error); ?></div>
+            <?php endif; ?>
             <form action="" method="POST" style="display: flex; gap: 0.75rem;">
                 <input type="text" name="module_title" class="form-control" required placeholder="e.g. Module 4: Monetization & Channel Scaling">
                 <button type="submit" class="btn btn-primary" style="white-space: nowrap;">
@@ -91,24 +125,7 @@ require_once __DIR__ . '/../includes/header.php';
                     </thead>
                     <tbody>
                         <?php if (empty($modules)): ?>
-                            <tr>
-                                <td style="font-weight: 600;">Module 1: YouTube Channel Architecture & Algorithms</td>
-                                <td>4 Lessons</td>
-                                <td>
-                                    <a href="<?= site_url('teacher/lessons.php?module_id=1'); ?>" class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-video"></i> Manage Lessons
-                                    </a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="font-weight: 600;">Module 2: Video Production & Thumbnail Packaging</td>
-                                <td>4 Lessons</td>
-                                <td>
-                                    <a href="<?= site_url('teacher/lessons.php?module_id=2'); ?>" class="btn btn-sm btn-outline-primary">
-                                        <i class="fas fa-video"></i> Manage Lessons
-                                    </a>
-                                </td>
-                            </tr>
+                            <tr><td colspan="3">No modules yet. Add a module above to organize this course's lessons.</td></tr>
                         <?php else: ?>
                             <?php foreach ($modules as $m): ?>
                                 <tr>

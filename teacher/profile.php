@@ -36,7 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_name'] = $fullName;
             $msg = "Instructor profile updated successfully!";
         } catch (PDOException $e) {
-            $error = "Update error: " . $e->getMessage();
+            log_database_error('Update teacher profile', $e);
+            $error = 'Your profile could not be updated. Please try again.';
         }
     } else {
         $msg = "Profile updated (Preview Mode)!";

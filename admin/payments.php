@@ -55,7 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['payment_id'], $_POST[
             header("Location: " . site_url('admin/payments.php'));
             exit;
         } catch (PDOException $e) {
-            set_flash('error', "Database error: " . $e->getMessage());
+            log_database_error('Review payment', $e);
+            set_flash('error', 'The payment could not be updated. Please try again.');
         }
     } else {
         set_flash('success', "Payment status updated to " . ucfirst($newStatus) . " (Preview Mode)!");

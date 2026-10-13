@@ -18,7 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
             header("Location: " . site_url('admin/courses.php'));
             exit;
         } catch (PDOException $e) {
-            set_flash('error', "Could not delete course: " . $e->getMessage());
+            log_database_error('Delete course', $e);
+            set_flash('error', 'The course could not be deleted. Please try again.');
         }
     }
 }

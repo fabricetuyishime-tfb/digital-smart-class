@@ -48,7 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header("Location: " . site_url('teacher/courses.php'));
             exit;
         } catch (PDOException $e) {
-            set_flash('error', 'Error updating course: ' . $e->getMessage());
+            log_database_error('Update course', $e);
+            set_flash('error', 'The course could not be updated. Please try again.');
         }
     } else {
         set_flash('success', 'Course updated (Preview Mode)!');

@@ -87,7 +87,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             header("Location: " . site_url('student/learning.php?course_id=' . $courseId . '&lesson_id=' . $lessonToComplete));
             exit;
         } catch (PDOException $e) {
-            set_flash('error', 'Progress update error: ' . $e->getMessage());
+            log_database_error('Update lesson progress', $e);
+            set_flash('error', 'Progress could not be saved. Please try again.');
         }
     } else {
         set_flash('success', 'Lesson marked as COMPLETED (Preview Mode)!');

@@ -21,7 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['title'], $_POST['mess
             header("Location: " . site_url('admin/notifications.php'));
             exit;
         } catch (PDOException $e) {
-            set_flash('error', 'Error: ' . $e->getMessage());
+            log_database_error('Send notification', $e);
+            set_flash('error', 'The notification could not be sent. Please try again.');
         }
     }
 }

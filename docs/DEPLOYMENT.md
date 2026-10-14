@@ -78,6 +78,30 @@ volume at `/var/www/html/uploads` so teacher uploads survive restarts.
 - [ ] Demo login works for all four roles
 - [ ] Uploaded course media streams through `student/file.php`
 
+## Troubleshooting
+
+### `AH00534: apache2: Configuration error: More than one MPM loaded.`
+Apache refuses to start when two Multi-Processing Modules are enabled at once.
+The `php:8.2-apache` base image already disables `mpm_event`, so if you see this
+the platform is **not** running the repository `Dockerfile`.
+
+Fixes:
+1. Force the Docker builder. On Railway this is done by `railway.json`
+   (`"builder": "DOCKERFILE"`), which is included in this repository.
+   Redeploy after clearing the build cache.
+2. The container entrypoint also disables `mpm_event`/`mpm_worker` and enables
+   `mpm_prefork` at startup, so a correct image self-heals.
+
+### The container starts but the platform cannot reach it
+Hosting platforms inject a `PORT` variable. The entrypoint rewrites Apache's
+`ports.conf` and virtual host to listen on `$PORT` automatically, so no manual
+port configuration is required.
+
+### Database not connected
+Set the `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASS` variables.
+Check `/health.php`; it reports `"database":"connected"` once the app can reach
+MySQL.
+
 ## Retire the static Vercel deployment
 Once a PHP host is live, delete or unpublish the Vercel project (or keep it
 purely as a static marketing page) so visitors do not download the PHP source.

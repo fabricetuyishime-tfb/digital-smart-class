@@ -8,8 +8,11 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && docker-php-ext-install pdo pdo_mysql mysqli
 
-# Apache modules required for clean routing and .htaccess rules
-RUN a2enmod rewrite headers
+# Apache modules required for clean routing and .htaccess rules.
+# Also force exactly one MPM: mod_php requires mpm_prefork, and loading two MPMs
+# aborts Apache with "AH00534: More than one MPM loaded".
+RUN a2dismod mpm_event mpm_worker >/dev/null 2>&1 || true; \
+    a2enmod mpm_prefork rewrite headers
 
 # Project files
 COPY . /var/www/html/

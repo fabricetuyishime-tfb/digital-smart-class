@@ -21,6 +21,38 @@ function format_money($amount, $currency = 'RWF') {
     return number_format((float)$amount, 0, '.', ',') . ' ' . $currency;
 }
 
+/**
+ * Official support team contacts (single source of truth).
+ * Update these in one place to change them across the whole platform.
+ */
+function support_whatsapp_number() {
+    return '250798532388'; // 0798532388 in international format
+}
+
+function support_phone_display() {
+    return '+250 798 532 388';
+}
+
+function support_phone_tel() {
+    return '+' . support_whatsapp_number();
+}
+
+function support_email() {
+    return 'contact@digitalsmart.rw';
+}
+
+/**
+ * Build a WhatsApp chat link for the official support team.
+ * Optionally pre-fills the first message.
+ */
+function support_whatsapp_url($message = '') {
+    $url = 'https://wa.me/' . support_whatsapp_number();
+    if ($message !== '') {
+        $url .= '?text=' . rawurlencode($message);
+    }
+    return $url;
+}
+
 /** Log database details for maintainers without exposing them to users. */
 function log_database_error($context, Throwable $exception) {
     error_log('[Digital Smart Class] ' . $context . ': ' . $exception->getMessage());

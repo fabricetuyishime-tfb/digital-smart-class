@@ -78,6 +78,27 @@ require_once __DIR__ . '/../includes/header.php';
                     <input type="text" class="form-control" value="00045-01234567-89 (DIGITAL SMART CLASS LTD)">
                 </div>
 
+                <h3 style="font-size: 1.05rem; font-weight: 800; color: #0f172a; margin: 1.75rem 0 1rem; padding-top: 1.5rem; border-top: 1px solid #e2e8f0;">
+                    <i class="fab fa-whatsapp" style="color: #25d366;"></i> Support &amp; Communication
+                </h3>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+                    <div class="form-group">
+                        <label class="form-label" for="support_whatsapp">Support WhatsApp Number</label>
+                        <input type="text" id="support_whatsapp" name="support_whatsapp" class="form-control" value="<?= e(support_phone_display()); ?>">
+                        <div class="form-hint">Shown on the website, footer, contact page, and payment screens.</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="support_email">Support Email</label>
+                        <input type="email" id="support_email" name="support_email" class="form-control" value="<?= e(support_email()); ?>">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="support_hours">Support Working Hours</label>
+                    <input type="text" id="support_hours" name="support_hours" class="form-control" value="Monday – Saturday, 08:00 – 18:00">
+                </div>
+
                 <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">
                     <i class="fas fa-save"></i> Save Platform Settings
                 </button>

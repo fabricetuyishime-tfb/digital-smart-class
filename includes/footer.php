@@ -10,14 +10,15 @@
                 </p>
                 <div class="footer-contact">
                     <p><i class="fas fa-map-marker-alt"></i> Kigali, Rwanda</p>
-                    <p><i class="fas fa-envelope"></i> contact@digitalsmart.rw</p>
-                    <p><i class="fas fa-phone"></i> +250 788 000 000</p>
+                    <p><i class="fas fa-envelope"></i> <a href="mailto:<?= e(support_email()); ?>"><?= e(support_email()); ?></a></p>
+                    <p><i class="fas fa-phone"></i> <a href="tel:<?= e(support_phone_tel()); ?>"><?= e(support_phone_display()); ?></a></p>
+                    <p><i class="fab fa-whatsapp"></i> <a href="<?= e(support_whatsapp_url('Hello Digital Smart Class support team, I need assistance.')); ?>" target="_blank" rel="noopener">WhatsApp Support</a></p>
                 </div>
                 <div class="social-row">
                     <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
                     <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
                     <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
-                    <a href="#" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                    <a href="<?= e(support_whatsapp_url('Hello Digital Smart Class support team, I need assistance.')); ?>" target="_blank" rel="noopener" aria-label="Chat with support on WhatsApp"><i class="fab fa-whatsapp"></i></a>
                 </div>
             </div>
 
@@ -61,6 +62,18 @@
         </div>
     </div>
 </footer>
+
+<!-- Floating WhatsApp support launcher -->
+<a class="wa-support"
+   href="<?= e(support_whatsapp_url('Hello Digital Smart Class support team, I would like some help.')); ?>"
+   target="_blank" rel="noopener"
+   aria-label="Chat with our support team on WhatsApp">
+    <span class="wa-support-badge"><i class="fab fa-whatsapp" aria-hidden="true"></i></span>
+    <span class="wa-support-body">
+        <span class="wa-support-title">Need help?</span>
+        <span class="wa-support-sub">Chat with support</span>
+    </span>
+</a>
 
 <script src="<?= site_url('assets/js/main.js'); ?>"></script>
 </body>

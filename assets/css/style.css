@@ -1825,3 +1825,107 @@ tr:last-child td {
 .nav-overlay {
     display: none;
 }
+
+/* ================= WhatsApp support launcher ================= */
+.footer-contact a {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: var(--transition);
+}
+
+.footer-contact a:hover {
+    color: var(--white);
+    border-color: rgba(255, 255, 255, 0.45);
+}
+
+.wa-support {
+    position: fixed;
+    right: 22px;
+    bottom: 22px;
+    z-index: 90;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.6rem 1rem 0.6rem 0.6rem;
+    border-radius: var(--radius-full);
+    background: linear-gradient(135deg, #25d366, #128c7e);
+    color: #ffffff;
+    text-decoration: none;
+    box-shadow: 0 16px 34px -12px rgba(18, 140, 126, 0.65);
+    transition: var(--transition);
+}
+
+.wa-support:hover,
+.wa-support:focus-visible {
+    transform: translateY(-3px);
+    box-shadow: 0 22px 40px -12px rgba(18, 140, 126, 0.75);
+    color: #ffffff;
+}
+
+.wa-support-badge {
+    position: relative;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 1.4rem;
+}
+
+.wa-support-badge::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.55);
+    opacity: 0.75;
+    animation: waPulse 2.4s ease-out infinite;
+}
+
+.wa-support-body {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+    padding-right: 0.25rem;
+}
+
+.wa-support-title {
+    font-size: 0.9rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+.wa-support-sub {
+    font-size: 0.73rem;
+    font-weight: 600;
+    opacity: 0.92;
+}
+
+@keyframes waPulse {
+    0% { transform: scale(0.9); opacity: 0.8; }
+    70% { transform: scale(1.35); opacity: 0; }
+    100% { transform: scale(1.35); opacity: 0; }
+}
+
+@media (max-width: 600px) {
+    .wa-support {
+        right: 16px;
+        bottom: 16px;
+        padding: 0.55rem;
+        gap: 0;
+    }
+
+    .wa-support-body {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .wa-support-badge::after {
+        animation: none;
+    }
+}

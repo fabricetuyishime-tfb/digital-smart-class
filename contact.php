@@ -31,10 +31,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div class="contact-row">
-                <div class="contact-icon green"><i class="fas fa-phone-alt"></i></div>
+                <div class="contact-icon green"><i class="fab fa-whatsapp"></i></div>
                 <div>
-                    <h5 style="font-weight: 800; color: #0f172a; margin-bottom: 0.2rem;">Phone &amp; WhatsApp</h5>
-                    <p style="font-size: 0.9rem; color: #64748b;">+250 788 000 000 / +250 730 000 002</p>
+                    <h5 style="font-weight: 800; color: #0f172a; margin-bottom: 0.2rem;">Support Team &amp; WhatsApp</h5>
+                    <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 0.6rem;">
+                        <?= e(support_phone_display()); ?> &middot; Mon&ndash;Sat, 08:00&ndash;18:00
+                    </p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        <a class="btn btn-primary btn-sm" href="<?= e(support_whatsapp_url('Hello Digital Smart Class support team, I need assistance.')); ?>" target="_blank" rel="noopener" style="background: #25d366; border-color: #25d366;">
+                            <i class="fab fa-whatsapp"></i> Chat on WhatsApp
+                        </a>
+                        <a class="btn btn-outline btn-sm" href="tel:<?= e(support_phone_tel()); ?>">
+                            <i class="fas fa-phone-alt"></i> Call support
+                        </a>
+                    </div>
                 </div>
             </div>
 
@@ -42,13 +52,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="contact-icon amber"><i class="fas fa-envelope"></i></div>
                 <div>
                     <h5 style="font-weight: 800; color: #0f172a; margin-bottom: 0.2rem;">Email support</h5>
-                    <p style="font-size: 0.9rem; color: #64748b;">contact@digitalsmart.rw / finance@digitalsmart.rw</p>
+                    <p style="font-size: 0.9rem; color: #64748b;">
+                        <a href="mailto:<?= e(support_email()); ?>"><?= e(support_email()); ?></a> / finance@digitalsmart.rw
+                    </p>
                 </div>
             </div>
 
             <div class="info-tile" style="font-size: 0.85rem; color: #64748b;">
                 <strong style="color: #0f172a;">Need payment assistance?</strong><br>
                 For MTN Mobile Money or Airtel confirmation issues, mention your Transaction ID when messaging.
+                <div style="margin-top: 0.75rem;">
+                    <a class="btn btn-primary btn-sm" href="<?= e(support_whatsapp_url('Hello support, I need help with a Mobile Money payment. My transaction ID is: ')); ?>" target="_blank" rel="noopener" style="background: #25d366; border-color: #25d366;">
+                        <i class="fab fa-whatsapp"></i> Send Transaction ID on WhatsApp
+                    </a>
+                </div>
             </div>
         </div>
 

@@ -266,6 +266,31 @@ digital-smart-class/
 
 ---
 
+## 💬 Support &amp; Contact
+
+The platform exposes a single official support channel through WhatsApp, wired everywhere
+(footer, floating launcher, contact page, payment screens, and admin slash settings).
+
+| Channel | Value |
+| :--- | :--- |
+| **WhatsApp / Phone** | +250 798 532 388 (`0798532388`) |
+| **Support email** | contact@digitalsmart.rw |
+| **Hours** | Monday – Saturday, 08:00 – 18:00 |
+
+To change the support number across the whole site, edit the helpers at the top of
+`includes/functions.php`:
+
+```php
+function support_whatsapp_number() { return '250798532388'; } // 0798532388
+function support_phone_display()   { return '+250 798 532 388'; }
+function support_email()           { return 'contact@digitalsmart.rw'; }
+```
+
+WhatsApp links are generated with `support_whatsapp_url($message)`, which builds a
+`https://wa.me/...` deep link and can pre-fill the first message.
+
+---
+
 ## 🔑 7. Default Demo Accounts
 
 All pre-configured accounts use the password: **`Password@123`**

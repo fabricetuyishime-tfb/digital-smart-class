@@ -60,6 +60,11 @@ require_once __DIR__ . '/../includes/header.php';
             <p style="color: #64748b; font-size: 0.95rem; line-height: 1.6;">
                 After sending your payment, click the button below to submit your transaction ID. Our administrative and accounting team will review and approve your enrollment, instantly unlocking all course videos, notes, files, and presentations!
             </p>
+            <p style="margin-top: 0.85rem; font-size: 0.9rem; color: #475569;">
+                <i class="fab fa-whatsapp" style="color: #25d366;"></i>
+                Need help paying? Chat with our support team on WhatsApp at
+                <a href="<?= e(support_whatsapp_url('Hello support, I need help enrolling in: ' . $course['title'])); ?>" target="_blank" rel="noopener" style="color: var(--primary); font-weight: 700;"><?= e(support_phone_display()); ?></a>.
+            </p>
         </div>
 
         <div style="text-align: center;">

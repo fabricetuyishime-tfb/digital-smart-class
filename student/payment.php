@@ -183,6 +183,16 @@ require_once __DIR__ . '/../includes/header.php';
                     </p>
                 </div>
             </div>
+
+            <div style="margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px dashed var(--gray-200); display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; justify-content: space-between;">
+                <span style="font-size: 0.9rem; color: var(--gray-600);">
+                    <i class="fas fa-headset" style="color: var(--primary);"></i>
+                    Stuck on a payment? Our support team is ready to help on WhatsApp.
+                </span>
+                <a class="btn btn-primary btn-sm" href="<?= e(support_whatsapp_url('Hello support, I need help completing my course payment. My transaction ID is: ')); ?>" target="_blank" rel="noopener" style="background: #25d366; border-color: #25d366;">
+                    <i class="fab fa-whatsapp"></i> Chat with support
+                </a>
+            </div>
         </div>
 
         <!-- Submission Form -->

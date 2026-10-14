@@ -1,0 +1,35 @@
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: digital_smart_class
+    ports:
+      - "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  app:
+    build: .
+    ports:
+      - "8080:80"
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: digital_smart_class
+      DB_USER: root
+      DB_PASS: root
+      DB_IMPORT: "1"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/var/www/html/uploads
+
+volumes:
+  db_data:

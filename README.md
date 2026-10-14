@@ -310,6 +310,20 @@ C:\xampp\mysql\bin\mysql.exe -u root digital_smart_class < database\digital_smar
 Then visit:
 👉 **`http://localhost/digital-smart-class/`**
 
+### Option 4: Docker (recommended for hosting)
+Vercel's static hosting cannot execute PHP, so the application must run on a PHP
+host. This repository ships a `Dockerfile` (PHP 8.2 + Apache + MySQL) and a
+`docker-compose.yml` for a full local stack.
+
+```bash
+docker compose up --build
+# open http://localhost:8080
+```
+
+See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for Railway, Render, Fly.io, and
+shared-hosting instructions, plus environment variables and the `/health.php`
+check.
+
 ## Manual Smoke Tests
 
 Run these checks after importing the database and starting Apache/MySQL:

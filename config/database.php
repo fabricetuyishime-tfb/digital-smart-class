@@ -6,20 +6,33 @@
 
 // Start session if not already active
 if (session_status() === PHP_SESSION_NONE) {
+    $secureCookie = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+    if ($secureCookie) {
+        ini_set('session.cookie_secure', '1');
+    }
+    ini_set('session.cookie_httponly', '1');
+    ini_set('session.cookie_samesite', 'Lax');
     session_start();
 }
 
-$db_host = 'localhost';
-$db_name = 'digital_smart_class';
-$db_user = 'root';
-$db_pass = ''; // Default XAMPP password is empty
+// Environment-aware configuration. Local XAMPP works with the defaults below;
+// hosted platforms (Vercel, Railway, etc.) can inject DB_* variables.
+$db_host = getenv('DB_HOST') ?: 'localhost';
+$db_name = getenv('DB_NAME') ?: 'digital_smart_class';
+$db_user = getenv('DB_USER') ?: 'root';
+$db_pass = getenv('DB_PASS');
+if ($db_pass === false) {
+    $db_pass = ''; // Default XAMPP password is empty
+}
+$db_port = getenv('DB_PORT') ?: '3306';
 
 $pdo = null;
 $db_connected = false;
 $db_error = null;
 
 try {
-    $dsn = "mysql:host={$db_host};dbname={$db_name};charset=utf8mb4";
+    $dsn = "mysql:host={$db_host};port={$db_port};dbname={$db_name};charset=utf8mb4";
     $options = [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -44,8 +57,10 @@ function getDB() {
  * Base site URL configuration
  */
 function site_url($path = '') {
-    // Detect folder dynamically
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+    // Detect folder dynamically, including reverse proxies/load balancers
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+    $protocol = $isHttps ? "https://" : "http://";
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     
     // Determine relative directory

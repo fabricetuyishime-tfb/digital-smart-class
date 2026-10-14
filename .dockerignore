@@ -1,0 +1,20 @@
+# Git and local tooling
+.git
+.gitignore
+.cursor
+.github
+
+# Local environment and logs
+.env
+*.log
+
+# Uploaded runtime content (mount a volume in production instead)
+uploads/*
+!uploads/.gitkeep
+!uploads/*/.gitkeep
+!uploads/.htaccess
+
+# Docs
+docs
+README.md
+LICENSE

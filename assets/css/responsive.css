@@ -288,12 +288,87 @@
         opacity: 1;
         visibility: visible;
     }
+
+    /* Dashboard sidebar becomes an off-canvas drawer opened by the hamburger */
+    .dashboard-layout .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        height: 100dvh;
+        width: min(300px, 86vw);
+        max-width: 86vw;
+        background: #ffffff;
+        border-right: 1px solid var(--gray-200);
+        border-bottom: none;
+        padding-top: 3.4rem;
+        box-shadow: 24px 0 60px -28px rgba(15, 23, 42, 0.55);
+        transform: translateX(-105%);
+        transition: transform 0.36s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow-y: auto;
+        z-index: 310;
+        will-change: transform;
+    }
+
+    .dashboard-layout .sidebar.is-open {
+        transform: translateX(0);
+    }
+
+    .sidebar-close {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 38px;
+        height: 38px;
+        border: 1px solid var(--gray-200);
+        border-radius: 11px;
+        background: var(--gray-50);
+        color: var(--gray-600);
+        font-size: 1rem;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .sidebar-close:hover,
+    .sidebar-close:focus-visible {
+        background: #fef2f2;
+        border-color: #fecaca;
+        color: var(--danger);
+        outline: none;
+    }
+
+    .sidebar-overlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(7, 20, 39, 0.5);
+        backdrop-filter: blur(2px);
+        -webkit-backdrop-filter: blur(2px);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+        z-index: 305;
+    }
+
+    body.sidebar-open {
+        overflow: hidden;
+    }
+
+    body.sidebar-open .sidebar-overlay {
+        opacity: 1;
+        visibility: visible;
+    }
 }
 
 @media (min-width: 901px) {
     .nav-menu-head,
     .nav-menu-close,
-    .nav-overlay {
+    .nav-overlay,
+    .sidebar-close,
+    .sidebar-overlay {
         display: none !important;
     }
 }

@@ -1,33 +1,13 @@
 #!/bin/bash
 # Digital Smart Class container entrypoint.
-# - Repairs Apache MPM configuration (some base images enable two MPMs).
 # - Honors the platform-provided PORT (Railway/Render/etc. inject one).
 # - Optionally imports the database seed on first boot when DB_IMPORT=1.
 set -e
 
-# --- Apache hardening -------------------------------------------------------
-# mod_php only works with mpm_prefork. If any other MPM sneaks in (for example
-# from a base image or platform layer), Apache aborts with:
-#   AH00534: apache2: Configuration error: More than one MPM loaded.
-# Disabling the alternatives here makes the container self-healing.
-if command -v a2dismod >/dev/null 2>&1; then
-    a2dismod mpm_event mpm_worker >/dev/null 2>&1 || true
-    a2enmod mpm_prefork >/dev/null 2>&1 || true
-fi
-
 # --- Port handling ----------------------------------------------------------
-# Apache's stock config listens on 80. Hosting platforms usually expose the app
-# on the port given by $PORT, so rewrite the listeners to match.
-APACHE_PORT="${PORT:-80}"
-if [ -f /etc/apache2/ports.conf ]; then
-    sed -i "s/^Listen .*/Listen ${APACHE_PORT}/" /etc/apache2/ports.conf
-fi
-if [ -f /etc/apache2/sites-available/000-default.conf ]; then
-    sed -i "s/<VirtualHost \*:[0-9]*>/<VirtualHost *:${APACHE_PORT}>/" \
-        /etc/apache2/sites-available/000-default.conf
-fi
-export APACHE_PORT
-echo "Apache will listen on port ${APACHE_PORT}."
+# The built-in server must listen on the port the platform routes traffic to.
+APP_PORT="${PORT:-80}"
+echo "Starting PHP built-in server on port ${APP_PORT}."
 
 # --- Optional database seed import -----------------------------------------
 if [ -n "$DB_HOST" ] && [ "$DB_IMPORT" = "1" ]; then
@@ -53,6 +33,11 @@ if [ -n "$DB_HOST" ] && [ "$DB_IMPORT" = "1" ]; then
     else
         echo "Database already contains tables; skipping seed import."
     fi
+fi
+
+# When launched with the default command, bind to the platform port.
+if [ "${1:-}" = "php" ] && [ "${2:-}" = "-S" ]; then
+    exec php -S "0.0.0.0:${APP_PORT}" -t /var/www/html /var/www/html/router.php
 fi
 
 exec "$@"

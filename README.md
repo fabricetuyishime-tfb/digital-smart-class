@@ -312,7 +312,7 @@ Then visit:
 
 ### Option 4: Docker (recommended for hosting)
 Vercel's static hosting cannot execute PHP, so the application must run on a PHP
-host. This repository ships a `Dockerfile` (PHP 8.2 + Apache + MySQL) and a
+host. This repository ships a `Dockerfile` (PHP 8.2 built-in server + MySQL) and a
 `docker-compose.yml` for a full local stack.
 
 ```bash

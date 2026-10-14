@@ -17,8 +17,13 @@ so it needs a PHP runtime and a persistent database/filesystem. Use a PHP host.
 | Shared cPanel hosting | ✅ | ✅ | ✅ | Upload files, import SQL in phpMyAdmin |
 
 ## Option A — Docker (Railway / Render / Fly.io / VPS)
-The repository includes a `Dockerfile` (PHP 8.2 + Apache + `pdo_mysql`).
-It serves the app from `/var/www/html` and enables `.htaccess`.
+The repository includes a `Dockerfile` that runs **PHP 8.2 with its built-in
+server** (no Apache) plus `pdo_mysql`. `docker/router.php` reproduces the
+`.htaccess` rules: it blocks `config/`, `includes/`, `database/`, `docker/`,
+`uploads/`, and source/backup files, then serves pages and assets.
+
+Using the built-in server removes Apache's MPM configuration entirely, so
+`AH00534: More than one MPM loaded` cannot occur with this image.
 
 ### Local test
 ```bash
@@ -81,7 +86,7 @@ See `.env.example`. The application reads them with `getenv()`:
 - `MYSQLHOST`, `MYSQLPORT`, `MYSQLUSER`, `MYSQLPASSWORD`, `MYSQLDATABASE`
   (Railway's MySQL plugin variable names)
 - `DB_IMPORT` (Docker only; imports the seed on first boot, then skips)
-- `PORT` (injected by the host; Apache is reconfigured to listen on it)
+- `PORT` (injected by the host; the server is started on this port)
 
 Explicit `DB_*` values win. If they are absent, the app falls back to the
 Railway variables or connection string, then to the local XAMPP defaults
@@ -101,21 +106,23 @@ volume at `/var/www/html/uploads` so teacher uploads survive restarts.
 ## Troubleshooting
 
 ### `AH00534: apache2: Configuration error: More than one MPM loaded.`
-Apache refuses to start when two Multi-Processing Modules are enabled at once.
-The `php:8.2-apache` base image already disables `mpm_event`, so if you see this
-the platform is **not** running the repository `Dockerfile`.
+This error comes from Apache, but this project's `Dockerfile` **does not use
+Apache at all** (it uses PHP's built-in server). Seeing this message therefore
+means the platform is running its own Apache build and ignoring the `Dockerfile`.
 
-Fixes:
-1. Force the Docker builder. On Railway this is done by `railway.json`
-   (`"builder": "DOCKERFILE"`), which is included in this repository.
-   Redeploy after clearing the build cache.
-2. The container entrypoint also disables `mpm_event`/`mpm_worker` and enables
-   `mpm_prefork` at startup, so a correct image self-heals.
+Fix it by making the platform use the repository Dockerfile:
+1. Railway → service → **Settings → Build** → set **Builder** to `Dockerfile`
+   (the included `railway.json` already requests this, but a service created
+   before the Dockerfile existed can keep its old builder). Then **Redeploy**
+   with **Clear build cache**.
+2. If the builder cannot be changed, **delete the service and create it again**
+   from the repository so the Dockerfile is detected on first build.
+3. In the build log you should now see `FROM php:8.2-cli` (not an Apache image)
+   and, at runtime, `Starting PHP built-in server on port ...`.
 
 ### The container starts but the platform cannot reach it
-Hosting platforms inject a `PORT` variable. The entrypoint rewrites Apache's
-`ports.conf` and virtual host to listen on `$PORT` automatically, so no manual
-port configuration is required.
+Hosting platforms inject a `PORT` variable. The entrypoint starts the built-in
+server on `$PORT` automatically, so no manual port configuration is required.
 
 ### Database not connected
 Set the `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASS` variables.

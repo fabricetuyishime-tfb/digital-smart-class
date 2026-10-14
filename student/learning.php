@@ -218,7 +218,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <?php $isUploadedVideo = (bool)preg_match('/\.(mp4|webm|ogg)$/i', $currentLesson['video_url']); ?>
                     <?php if ($isUploadedVideo): ?>
                         <video controls preload="metadata" style="width: 100%; height: 100%;">
-                            <source src="<?= e(site_url($currentLesson['video_url'])); ?>">
+                            <source src="<?= e(site_url('student/file.php?lesson_id=' . (int)($currentLesson['id'] ?? 0))); ?>">
                             Your browser does not support this video format.
                         </video>
                     <?php else: ?>
@@ -271,13 +271,30 @@ require_once __DIR__ . '/../includes/header.php';
                     <i class="fas fa-folder-open" style="color: var(--secondary);"></i> Learning Materials
                 </h3>
                 
-                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                    <button type="button" class="btn btn-outline btn-sm" onclick="alert('Downloading lesson PDF checklist.')">
-                        <i class="fas fa-file-pdf" style="color: #ef4444;"></i> [ Download PDF ]
-                    </button>
-                    <button type="button" class="btn btn-outline btn-sm" onclick="alert('Opening presentation slide deck.')">
-                        <i class="fas fa-file-powerpoint" style="color: #ea580c;"></i> [ View Presentation ]
-                    </button>
+                <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+                    <?php if (empty($materials)): ?>
+                        <span style="color: var(--gray-500); font-size: 0.9rem;">No downloadable materials for this course yet.</span>
+                    <?php else: ?>
+                        <?php foreach ($materials as $material): ?>
+                            <?php
+                                $relativePath = ltrim(str_replace('\\', '/', $material['file_path']), '/');
+                                $materialExists = is_file(__DIR__ . '/../' . $relativePath);
+                                $iconClass = 'fa-file';
+                                if ($material['file_type'] === 'pdf' || $material['file_type'] === 'notes') $iconClass = 'fa-file-pdf';
+                                elseif ($material['file_type'] === 'presentation') $iconClass = 'fa-file-powerpoint';
+                                elseif ($material['file_type'] === 'zip') $iconClass = 'fa-file-archive';
+                            ?>
+                            <?php if ($materialExists): ?>
+                                <a href="<?= e(site_url('student/file.php?material_id=' . (int)$material['id'])); ?>" class="btn btn-outline btn-sm">
+                                    <i class="fas <?= $iconClass; ?>"></i> <?= e($material['title']); ?>
+                                </a>
+                            <?php else: ?>
+                                <span class="btn btn-outline btn-sm" style="opacity: 0.55; cursor: not-allowed;" aria-disabled="true">
+                                    <i class="fas <?= $iconClass; ?>"></i> <?= e($material['title']); ?> (not uploaded)
+                                </span>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

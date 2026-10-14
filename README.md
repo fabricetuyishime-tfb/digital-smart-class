@@ -287,11 +287,15 @@ An interactive CMD menu will let you start the server or import the database in 
 
 ### Option 2: Run via PHP Built-in Server
 ```cmd
-cd /d "C:\Users\TUYISHIME Fabrice\OneDrive\Desktop\sdc"
-C:\xampp\php\php.exe -S localhost:8000 -t .
+cd /d "C:\Users\TFB\OneDrive\Desktop\sdc"
+C:\xampp\php\php.exe -d upload_max_filesize=512M -d post_max_size=512M -d memory_limit=512M -S localhost:8000 -t .
 ```
 Then visit:
 👉 **`http://localhost:8000`**
+
+The `-d` overrides matter for teaching: PHP's default `upload_max_filesize` is only 2M,
+which rejects real lesson videos. In Docker these limits are applied automatically from
+[`docker/php.ini`](docker/php.ini), which the image copies into `conf.d`.
 
 If PHP is already added to your PATH, you can use `php -S localhost:8000 -t .`
 instead. The included `setup.bat` detects XAMPP automatically, even when PHP is
@@ -330,6 +334,8 @@ Run these checks after importing the database and starting Apache/MySQL:
 
 1. Sign in as a student and confirm the student dashboard opens.
 2. Sign in as a teacher, create a course, and confirm it appears under **My Courses**.
-3. Create a module and lesson for that course; try both a video URL and a small MP4 upload, then confirm the lesson appears.
-4. Open the course as an enrolled student and verify the video loads and lesson progress can be saved.
-5. With two teacher accounts, try opening the other teacher's course/module by changing the URL ID; expect a not-found response and no changes to their content. On a database failure, the page should show a generic message while technical details go to the PHP error log.
+3. Create a module and lesson for that course; try both a video URL and a small MP4 upload, then confirm the lesson appears under **Video → Uploaded** and opens through `student/file.php`.
+4. Upload a PDF/presentation through **Course Materials** and confirm it is listed and viewable; delete it and confirm the file disappears from `uploads/`.
+5. As a student, buy a *different* course (submit a payment reference), then confirm `student/learning.php` is blocked while pending and unlocked after the accountant/admin **approves** the payment.
+6. Open the course as an enrolled student and verify the video loads, materials download, and lesson progress can be saved.
+7. With two teacher accounts, try opening the other teacher's course/module by changing the URL ID; expect a not-found response and no changes to their content. On a database failure, the page should show a generic message while technical details go to the PHP error log.

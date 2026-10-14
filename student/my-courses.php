@@ -77,7 +77,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.35rem;">
                                     <span>Course Status</span>
                                     <span>
-                                        <?php if ($enr['status'] === 'active'): ?>
+                                        <?php if (in_array($enr['status'], ['active', 'completed'], true)): ?>
                                             <strong style="color: var(--success);"><i class="fas fa-check-circle"></i> Unlocked</strong>
                                         <?php else: ?>
                                             <strong style="color: var(--accent);"><i class="fas fa-clock"></i> Payment Pending</strong>
@@ -87,9 +87,9 @@ require_once __DIR__ . '/../includes/header.php';
                             </div>
 
                             <div>
-                                <?php if ($enr['status'] === 'active'): ?>
-                                    <a href="<?= site_url('student/course-details.php?id=' . $enr['course_id']); ?>" class="btn btn-primary btn-block">
-                                        <i class="fas fa-play"></i> Access Lessons
+                                <?php if (in_array($enr['status'], ['active', 'completed'], true)): ?>
+                                    <a href="<?= site_url('student/learning.php?course_id=' . $enr['course_id']); ?>" class="btn btn-primary btn-block">
+                                        <i class="fas fa-play"></i> Continue Learning
                                     </a>
                                 <?php else: ?>
                                     <a href="<?= site_url('student/payment.php?course_id=' . $enr['course_id']); ?>" class="btn btn-outline btn-block">

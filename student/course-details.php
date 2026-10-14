@@ -12,7 +12,7 @@ $enrollment = null;
 if ($db_connected && $pdo) {
     try {
         $stmt = $pdo->prepare("
-            SELECT c.*, cat.name as category_name, u.full_name as instructor_name, u.bio as instructor_bio
+            SELECT c.*, cat.name as category_name, u.full_name as instructor_name
             FROM courses c
             LEFT JOIN course_categories cat ON c.category_id = cat.id
             LEFT JOIN users u ON c.teacher_id = u.id
@@ -43,6 +43,7 @@ if ($db_connected && $pdo) {
             }
         }
     } catch (PDOException $e) {
+        log_database_error('Load course details for student', $e);
         $course = null;
     }
 }
@@ -121,8 +122,8 @@ require_once __DIR__ . '/../includes/header.php';
                     <div class="alert alert-success" style="padding: 0.75rem; font-size: 0.9rem; margin-bottom: 1rem;">
                         <i class="fas fa-check-circle"></i> You are fully enrolled!
                     </div>
-                    <a href="#curriculum" class="btn btn-primary btn-block">
-                        <i class="fas fa-play"></i> Watch Lessons Now
+                    <a href="<?= site_url('student/learning.php?course_id=' . $course['id']); ?>" class="btn btn-primary btn-block">
+                        <i class="fas fa-play"></i> Continue Learning
                     </a>
                 <?php elseif ($enrollment && $enrollment['status'] === 'pending'): ?>
                     <div class="alert alert-info" style="padding: 0.75rem; font-size: 0.85rem; margin-bottom: 1rem;">
@@ -187,17 +188,28 @@ require_once __DIR__ . '/../includes/header.php';
                             </div>
                             <div style="padding: 0.5rem 1.25rem;">
                                 <?php foreach (($mod['lessons'] ?? []) as $les): ?>
+                                    <?php
+                                        $canWatch = !empty($les['is_free_preview'])
+                                            || ($enrollment && in_array($enrollment['status'], ['active', 'completed'], true));
+                                        $lessonHref = site_url('student/learning.php?course_id=' . $course['id'] . '&lesson_id=' . $les['id']);
+                                    ?>
                                     <div style="padding: 0.75rem 0; border-bottom: 1px solid var(--gray-100); display: flex; justify-content: space-between; align-items: center;">
                                         <div style="display: flex; align-items: center; gap: 0.65rem;">
-                                            <i class="fas fa-play-circle" style="color: <?= (!empty($les['is_free_preview']) || ($enrollment && $enrollment['status'] === 'active')) ? 'var(--primary)' : 'var(--gray-400)'; ?>;"></i>
-                                            <span style="font-size: 0.9rem; color: var(--gray-800); font-weight: 500;">
-                                                <?= e($les['title']); ?>
-                                            </span>
+                                            <i class="fas fa-play-circle" style="color: <?= $canWatch ? 'var(--primary)' : 'var(--gray-400)'; ?>;"></i>
+                                            <?php if ($canWatch): ?>
+                                                <a href="<?= e($lessonHref); ?>" style="font-size: 0.9rem; color: var(--gray-800); font-weight: 500; text-decoration: none;">
+                                                    <?= e($les['title']); ?>
+                                                </a>
+                                            <?php else: ?>
+                                                <span style="font-size: 0.9rem; color: var(--gray-500); font-weight: 500;">
+                                                    <?= e($les['title']); ?>
+                                                </span>
+                                            <?php endif; ?>
                                         </div>
                                         <div>
                                             <?php if (!empty($les['is_free_preview'])): ?>
                                                 <span class="badge" style="background: #e0f2fe; color: #0369a1;">Free Preview</span>
-                                            <?php elseif (!$enrollment || $enrollment['status'] !== 'active'): ?>
+                                            <?php elseif (!$enrollment || !in_array($enrollment['status'], ['active', 'completed'], true)): ?>
                                                 <span style="font-size: 0.75rem; color: var(--gray-400);"><i class="fas fa-lock"></i> Locked</span>
                                             <?php else: ?>
                                                 <span class="badge badge-active">Available</span>

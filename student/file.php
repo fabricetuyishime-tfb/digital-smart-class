@@ -93,24 +93,33 @@ if ($isFreePreview) {
     $allowed = true;
 } elseif ($isAdmin) {
     $allowed = true;
-} elseif ($userId > 0) {
-    // Verify student/admin session role
-    if ($userRole === 'student' || $userRole === 'admin') {
-        if ($courseId && $db_connected && $pdo) {
-            try {
-                $eStmt = $pdo->prepare("
-                    SELECT status FROM enrollments
-                    WHERE user_id = :uid AND course_id = :cid
-                    LIMIT 1
-                ");
-                $eStmt->execute(['uid' => $userId, 'cid' => $courseId]);
-                $status = $eStmt->fetchColumn();
-                if (in_array($status, ['active', 'completed'], true)) {
-                    $allowed = true;
-                }
-            } catch (PDOException $e) {
-                $allowed = false;
+} elseif ($userId > 0 && $courseId && $db_connected && $pdo) {
+    if ($userRole === 'teacher') {
+        // A teacher may preview files for courses they own.
+        try {
+            $oStmt = $pdo->prepare("SELECT 1 FROM courses WHERE id = :cid AND teacher_id = :tid LIMIT 1");
+            $oStmt->execute(['cid' => $courseId, 'tid' => $userId]);
+            if ($oStmt->fetchColumn()) {
+                $allowed = true;
             }
+        } catch (PDOException $e) {
+            $allowed = false;
+        }
+    } elseif ($userRole === 'student') {
+        // Students must have an active or completed enrollment.
+        try {
+            $eStmt = $pdo->prepare("
+                SELECT status FROM enrollments
+                WHERE user_id = :uid AND course_id = :cid
+                LIMIT 1
+            ");
+            $eStmt->execute(['uid' => $userId, 'cid' => $courseId]);
+            $status = $eStmt->fetchColumn();
+            if (in_array($status, ['active', 'completed'], true)) {
+                $allowed = true;
+            }
+        } catch (PDOException $e) {
+            $allowed = false;
         }
     }
 }

@@ -20,6 +20,9 @@ RUN (command -v a2dismod >/dev/null 2>&1 && a2dismod mpm_event mpm_worker >/dev/
 
 WORKDIR /var/www/html
 
+# Raised PHP limits for course video / material uploads.
+COPY docker/php.ini /usr/local/etc/php/conf.d/zz-dsc.ini
+
 # Project files
 COPY . /var/www/html/
 

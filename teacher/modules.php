@@ -34,8 +34,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['module_title'])) {
     $title = trim($_POST['module_title']);
     if (!empty($title) && $db_connected && $pdo) {
         try {
-            $stmt = $pdo->prepare("INSERT INTO modules (course_id, title, order_num) VALUES (:cid, :title, 1)");
-            $stmt->execute(['cid' => $courseId, 'title' => $title]);
+            $ordStmt = $pdo->prepare("SELECT COALESCE(MAX(order_num), 0) + 1 FROM modules WHERE course_id = :cid");
+            $ordStmt->execute(['cid' => $courseId]);
+            $nextOrder = (int)$ordStmt->fetchColumn();
+
+            $stmt = $pdo->prepare("INSERT INTO modules (course_id, title, order_num) VALUES (:cid, :title, :ord)");
+            $stmt->execute(['cid' => $courseId, 'title' => $title, 'ord' => $nextOrder]);
             set_flash('success', 'New module added successfully!');
             header("Location: " . site_url('teacher/modules.php?course_id=' . $courseId));
             exit;

@@ -77,6 +77,18 @@ docker run --rm -p 8080:80 digital-smart-class
 3. Import `database/digital_smart_class.sql` via phpMyAdmin.
 4. Edit `config/database.php` defaults **or** set `DB_*` environment variables.
 5. Ensure `uploads/` is writable (`755`/`775`).
+6. Raise PHP upload limits in cPanel → **MultiPHP INI Editor** (or `php.ini`):
+   `upload_max_filesize = 512M`, `post_max_size = 512M`, `memory_limit = 512M`.
+
+## Media upload limits
+Course videos need more than PHP's default 2M upload cap. The Docker image applies
+[`docker/php.ini`](../docker/php.ini) automatically (copied to `conf.d`). On other
+hosts, set the same values there. When running the PHP built-in server locally, pass
+them on the command line:
+
+```bash
+php -d upload_max_filesize=512M -d post_max_size=512M -d memory_limit=512M -S localhost:8000 -t .
+```
 
 ## Environment variables
 See `.env.example`. The application reads them with `getenv()`:

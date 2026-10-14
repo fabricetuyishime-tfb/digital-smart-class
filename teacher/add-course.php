@@ -58,8 +58,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'dur' => $duration,
                 'les' => $lessons
             ]);
-            set_flash('success', "Course '{$title}' created and published successfully!");
-            header("Location: " . site_url('teacher/courses.php'));
+            $newCourseId = (int)$pdo->lastInsertId();
+            set_flash('success', "Course '{$title}' created! Now add modules and video lessons.");
+            header("Location: " . site_url('teacher/modules.php?course_id=' . $newCourseId));
             exit;
         } catch (PDOException $e) {
             log_database_error('Create course', $e);

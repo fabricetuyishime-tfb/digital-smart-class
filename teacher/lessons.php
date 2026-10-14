@@ -12,20 +12,78 @@ if (!$db_connected || !$pdo) {
 
 if ($db_connected && $pdo) {
     try {
-        $accessStmt = $pdo->prepare("SELECT m.id FROM modules m JOIN courses c ON c.id = m.course_id WHERE m.id = :mid AND (c.teacher_id = :tid OR :is_admin = 1) LIMIT 1");
+        $accessStmt = $pdo->prepare("SELECT m.id, m.course_id FROM modules m JOIN courses c ON c.id = m.course_id WHERE m.id = :mid AND (c.teacher_id = :tid OR :is_admin = 1) LIMIT 1");
         $accessStmt->execute([
             'mid' => $moduleId,
             'tid' => $user['id'],
             'is_admin' => $user['role'] === 'admin' ? 1 : 0,
         ]);
-        if (!$accessStmt->fetchColumn()) {
+        $accessRow = $accessStmt->fetch();
+        if (!$accessRow) {
             http_response_code(404);
             exit('Module not found.');
         }
+        $courseId = (int)$accessRow['course_id'];
     } catch (PDOException $e) {
         log_database_error('Verify module ownership', $e);
         http_response_code(500);
         exit('Unable to load this module right now. Please try again later.');
+    }
+}
+
+/** Keep courses.total_lessons in sync with the real number of lessons. */
+function sync_course_lesson_count(PDO $pdo, $courseId) {
+    $cnt = $pdo->prepare("SELECT COUNT(*) FROM lessons l JOIN modules m ON m.id = l.module_id WHERE m.course_id = :cid");
+    $cnt->execute(['cid' => $courseId]);
+    $total = (int)$cnt->fetchColumn();
+    $up = $pdo->prepare("UPDATE courses SET total_lessons = :t WHERE id = :cid");
+    $up->execute(['t' => $total, 'cid' => $courseId]);
+}
+
+// Handle Delete Lesson
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_lesson' && $db_connected && $pdo) {
+    $lessonToDelete = (int)($_POST['lesson_id'] ?? 0);
+    try {
+        $find = $pdo->prepare("
+            SELECT l.id, l.video_url
+            FROM lessons l
+            JOIN modules m ON m.id = l.module_id
+            JOIN courses c ON c.id = m.course_id
+            WHERE l.id = :lid AND l.module_id = :mid AND (c.teacher_id = :tid OR :is_admin = 1)
+            LIMIT 1
+        ");
+        $find->execute([
+            'lid' => $lessonToDelete,
+            'mid' => $moduleId,
+            'tid' => $user['id'],
+            'is_admin' => $user['role'] === 'admin' ? 1 : 0,
+        ]);
+        $lessonRow = $find->fetch();
+
+        if ($lessonRow) {
+            $del = $pdo->prepare("DELETE FROM lessons WHERE id = :lid");
+            $del->execute(['lid' => $lessonToDelete]);
+
+            // Remove an uploaded video file if this lesson owned one.
+            $videoUrl = (string)($lessonRow['video_url'] ?? '');
+            if (preg_match('/\.(mp4|webm|ogg)$/i', $videoUrl)) {
+                $abs = realpath(__DIR__ . '/../' . ltrim(str_replace('\\', '/', $videoUrl), '/'));
+                $uploadsRoot = realpath(__DIR__ . '/../uploads');
+                if ($abs && $uploadsRoot && strpos($abs, $uploadsRoot) === 0 && is_file($abs)) {
+                    @unlink($abs);
+                }
+            }
+
+            sync_course_lesson_count($pdo, $courseId);
+            set_flash('success', 'Lesson deleted.');
+        } else {
+            set_flash('error', 'Lesson not found.');
+        }
+        header("Location: " . site_url('teacher/lessons.php?module_id=' . $moduleId));
+        exit;
+    } catch (PDOException $e) {
+        log_database_error('Delete lesson', $e);
+        $error = 'The lesson could not be deleted. Please try again.';
     }
 }
 
@@ -56,9 +114,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['lesson_title'])) {
 
     if (!$error && !empty($title) && $db_connected && $pdo) {
         try {
+            $ordStmt = $pdo->prepare("SELECT COALESCE(MAX(order_num), 0) + 1 FROM lessons WHERE module_id = :mid");
+            $ordStmt->execute(['mid' => $moduleId]);
+            $nextOrder = (int)$ordStmt->fetchColumn();
+
             $stmt = $pdo->prepare("
-            INSERT INTO lessons (module_id, title, content, video_url, duration_minutes, is_free_preview)
-            VALUES (:mid, :title, :content, :url, :dur, :prev)
+            INSERT INTO lessons (module_id, title, content, video_url, duration_minutes, order_num, is_free_preview)
+            VALUES (:mid, :title, :content, :url, :dur, :ord, :prev)
         ");
             $stmt->execute([
                 'mid' => $moduleId,
@@ -66,8 +128,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['lesson_title'])) {
                 'content' => $content,
                 'url' => $videoUrl,
                 'dur' => $duration,
+                'ord' => $nextOrder,
                 'prev' => $isPreview
             ]);
+            sync_course_lesson_count($pdo, $courseId);
             set_flash('success', 'Lesson added to module successfully!');
             header("Location: " . site_url('teacher/lessons.php?module_id=' . $moduleId));
             exit;
@@ -178,23 +242,47 @@ require_once __DIR__ . '/../includes/header.php';
                         <tr>
                             <th>Lesson Title</th>
                             <th>Duration</th>
+                            <th>Video</th>
                             <th>Preview Status</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($lessons)): ?>
-                            <tr><td colspan="3">No lessons yet. Add a video lesson above.</td></tr>
+                            <tr><td colspan="5">No lessons yet. Add a video lesson above.</td></tr>
                         <?php else: ?>
                             <?php foreach ($lessons as $l): ?>
+                                <?php
+                                    $videoUrl = (string)($l['video_url'] ?? '');
+                                    $isUploaded = (bool)preg_match('/\.(mp4|webm|ogg)$/i', $videoUrl);
+                                ?>
                                 <tr>
                                     <td style="font-weight: 700; color: #0f172a;"><?= e($l['title']); ?></td>
                                     <td><?= e($l['duration_minutes']); ?> mins</td>
+                                    <td>
+                                        <?php if ($videoUrl === ''): ?>
+                                            <span style="font-size: 0.8rem; color: var(--gray-400);"><i class="fas fa-video-slash"></i> None</span>
+                                        <?php elseif ($isUploaded): ?>
+                                            <a href="<?= e(site_url('student/file.php?lesson_id=' . (int)$l['id'])); ?>" target="_blank" class="badge" style="background: #e0f2fe; color: #0369a1; text-decoration: none;">
+                                                <i class="fas fa-file-video"></i> Uploaded
+                                            </a>
+                                        <?php else: ?>
+                                            <span class="badge" style="background: #ede9fe; color: #6d28d9;"><i class="fas fa-link"></i> External</span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td>
                                         <?php if (!empty($l['is_free_preview'])): ?>
                                             <span class="badge" style="background: #e0f2fe; color: #0369a1;">Free Preview</span>
                                         <?php else: ?>
                                             <span class="badge badge-active">Protected</span>
                                         <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <form action="<?= site_url('teacher/lessons.php?module_id=' . $moduleId); ?>" method="POST" onsubmit="return confirm('Delete this lesson?');">
+                                            <input type="hidden" name="action" value="delete_lesson">
+                                            <input type="hidden" name="lesson_id" value="<?= (int)$l['id']; ?>">
+                                            <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                        </form>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>

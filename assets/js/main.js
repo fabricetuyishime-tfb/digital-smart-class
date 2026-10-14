@@ -76,19 +76,30 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 
-/* ================= Responsive navbar toggle ================= */
+/* ================= Responsive navbar drawer ================= */
 document.addEventListener('DOMContentLoaded', function () {
     const toggle = document.getElementById('navToggle');
     const menu = document.getElementById('navMenu');
+    const overlay = document.getElementById('navOverlay');
+    const closeBtn = document.getElementById('navClose');
     if (!toggle || !menu) return;
+
+    const MOBILE_BREAKPOINT = 900;
 
     function setOpen(isOpen) {
         menu.classList.toggle('is-open', isOpen);
+        document.body.classList.toggle('nav-open', isOpen);
         toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        if (overlay) {
+            overlay.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+        }
         const icon = toggle.querySelector('i');
         if (icon) {
             icon.classList.toggle('fa-bars', !isOpen);
             icon.classList.toggle('fa-times', isOpen);
+        }
+        if (isOpen && closeBtn) {
+            closeBtn.focus();
         }
     }
 
@@ -96,21 +107,36 @@ document.addEventListener('DOMContentLoaded', function () {
         setOpen(!menu.classList.contains('is-open'));
     });
 
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function () {
+            setOpen(false);
+            toggle.focus();
+        });
+    }
+
+    if (overlay) {
+        overlay.addEventListener('click', function () {
+            setOpen(false);
+        });
+    }
+
     menu.querySelectorAll('a').forEach(function (link) {
         link.addEventListener('click', function () {
-            if (window.innerWidth <= 768) {
+            if (window.innerWidth <= MOBILE_BREAKPOINT) {
                 setOpen(false);
             }
         });
     });
 
     document.addEventListener('keydown', function (event) {
-        if (event.key === 'Escape') setOpen(false);
+        if (event.key === 'Escape' && menu.classList.contains('is-open')) {
+            setOpen(false);
+            toggle.focus();
+        }
     });
 
-    document.addEventListener('click', function (event) {
-        if (window.innerWidth <= 768 && menu.classList.contains('is-open')
-            && !menu.contains(event.target) && !toggle.contains(event.target)) {
+    window.addEventListener('resize', function () {
+        if (window.innerWidth > MOBILE_BREAKPOINT && menu.classList.contains('is-open')) {
             setOpen(false);
         }
     });

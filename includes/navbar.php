@@ -31,6 +31,13 @@ if ($currentUser && $db_connected && $pdo) {
         </button>
 
         <div class="nav-menu" id="navMenu">
+            <div class="nav-menu-head">
+                <span class="nav-menu-title"><i class="fas fa-graduation-cap"></i> Menu</span>
+                <button type="button" class="nav-menu-close" id="navClose" aria-label="Close navigation menu">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
             <ul class="nav-links">
                 <li><a href="<?= site_url('index.php'); ?>" class="nav-link">Home</a></li>
                 <li><a href="<?= site_url('courses.php'); ?>" class="nav-link">Courses</a></li>
@@ -68,4 +75,6 @@ if ($currentUser && $db_connected && $pdo) {
             </div> <!-- End of .nav-actions -->
         </div> <!-- End of .nav-menu -->
     </div> <!-- End of .nav-container -->
+
+    <div class="nav-overlay" id="navOverlay" aria-hidden="true"></div>
 </nav>

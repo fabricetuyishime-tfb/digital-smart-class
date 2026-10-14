@@ -26,14 +26,19 @@ if ($currentUser && $db_connected && $pdo) {
             <div class="brand-text">DIGITAL<span>SMART</span>CLASS</div>
         </a>
 
-        <ul class="nav-links">
-            <li><a href="<?= site_url('index.php'); ?>" class="nav-link">Home</a></li>
-            <li><a href="<?= site_url('courses.php'); ?>" class="nav-link">Courses</a></li>
-            <li><a href="<?= site_url('about.php'); ?>" class="nav-link">About</a></li>
-            <li><a href="<?= site_url('contact.php'); ?>" class="nav-link">Contact</a></li>
-        </ul>
+        <button type="button" class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navMenu">
+            <i class="fas fa-bars"></i>
+        </button>
 
-        <div class="nav-actions">
+        <div class="nav-menu" id="navMenu">
+            <ul class="nav-links">
+                <li><a href="<?= site_url('index.php'); ?>" class="nav-link">Home</a></li>
+                <li><a href="<?= site_url('courses.php'); ?>" class="nav-link">Courses</a></li>
+                <li><a href="<?= site_url('about.php'); ?>" class="nav-link">About</a></li>
+                <li><a href="<?= site_url('contact.php'); ?>" class="nav-link">Contact</a></li>
+            </ul>
+
+            <div class="nav-actions">
             <?php if (is_logged_in()): ?>
                 <!-- Notification Bell -->
                 <a href="<?= site_url('student/notifications.php'); ?>" class="nav-icon-link" title="Notifications">
@@ -60,6 +65,7 @@ if ($currentUser && $db_connected && $pdo) {
                 <a href="<?= site_url('login.php'); ?>" class="btn btn-outline btn-sm">Login</a>
                 <a href="<?= site_url('register.php'); ?>" class="btn btn-primary btn-sm">Register</a>
             <?php endif; ?>
-        </div>
-    </div>
+            </div> <!-- End of .nav-actions -->
+        </div> <!-- End of .nav-menu -->
+    </div> <!-- End of .nav-container -->
 </nav>

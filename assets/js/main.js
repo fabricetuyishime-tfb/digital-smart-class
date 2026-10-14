@@ -74,3 +74,44 @@ document.addEventListener('DOMContentLoaded', function () {
 
     rafId = requestAnimationFrame(tick);
 });
+
+
+/* ================= Responsive navbar toggle ================= */
+document.addEventListener('DOMContentLoaded', function () {
+    const toggle = document.getElementById('navToggle');
+    const menu = document.getElementById('navMenu');
+    if (!toggle || !menu) return;
+
+    function setOpen(isOpen) {
+        menu.classList.toggle('is-open', isOpen);
+        toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        const icon = toggle.querySelector('i');
+        if (icon) {
+            icon.classList.toggle('fa-bars', !isOpen);
+            icon.classList.toggle('fa-times', isOpen);
+        }
+    }
+
+    toggle.addEventListener('click', function () {
+        setOpen(!menu.classList.contains('is-open'));
+    });
+
+    menu.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', function () {
+            if (window.innerWidth <= 768) {
+                setOpen(false);
+            }
+        });
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') setOpen(false);
+    });
+
+    document.addEventListener('click', function (event) {
+        if (window.innerWidth <= 768 && menu.classList.contains('is-open')
+            && !menu.contains(event.target) && !toggle.contains(event.target)) {
+            setOpen(false);
+        }
+    });
+});

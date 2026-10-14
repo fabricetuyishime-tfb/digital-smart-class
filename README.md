@@ -1,5 +1,10 @@
 # DIGITAL SMART CLASS — Professional E-Learning Platform
 
+![PHP](https://img.shields.io/badge/PHP-8.2%2B-777BB4?logo=php&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-MariaDB-4479A1?logo=mysql&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Status](https://img.shields.io/badge/Status-Active-success)
+
 A complete, production-grade online learning platform built strictly using **Pure PHP 8+, HTML5, CSS3, and MySQL**.
 No React. No Java. No Spring Boot. No Node.js. No Bootstrap required. 100% lightweight, secure, and native web architecture.
 

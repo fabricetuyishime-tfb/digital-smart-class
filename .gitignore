@@ -1,0 +1,36 @@
+# Operating system files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+*.pid
+*.cache
+
+# Editor files
+.vscode/*
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Environment configuration (never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# Local XAMPP/stack files
+/xampp
+/mysql
+
+# User-generated uploads, while preserving folder structure and gateway rules
+/uploads/*
+!/uploads/.htaccess
+!/uploads/*/.gitkeep
+
+# Build artifacts
+node_modules/
+dist/
+build/

@@ -72,7 +72,7 @@ Serverless platforms lose local files on deploy. With Docker hosts, mount a
 volume at `/var/www/html/uploads` so teacher uploads survive restarts.
 
 ## Post-deploy checklist
-- [ ] `/health.php` returns `200` with `"database":"connected"`
+- [ ] `/health.php` returns `"status":"ok"` and `"database":"connected"`
 - [ ] Homepage renders styled content (not raw PHP)
 - [ ] `assets/css/style.css` loads
 - [ ] Demo login works for all four roles

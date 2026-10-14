@@ -1,0 +1,21 @@
+# Keep shell scripts and configuration in LF so Linux containers run correctly,
+# regardless of the developer's operating system.
+*.sh text eol=lf
+Dockerfile text eol=lf
+docker-compose.yml text eol=lf
+*.php text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.bat text eol=crlf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.mp4 binary
+*.webm binary

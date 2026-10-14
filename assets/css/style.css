@@ -1515,3 +1515,249 @@ tr:last-child td {
         grid-template-columns: 1fr;
     }
 }
+
+
+/* ================= Hero 3D studio ================= */
+.hero-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    align-items: center;
+    gap: 2.2rem;
+}
+
+.hero-copy {
+    text-align: left;
+}
+
+.hero .hero-copy .hero-tagline,
+.hero .hero-copy .hero-actions,
+.hero .hero-copy .hero-stats {
+    justify-content: flex-start;
+}
+
+.hero .hero-copy .hero-desc {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.hero .hero-copy .hero-stats {
+    margin-left: 0;
+}
+
+.hero-visual {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+}
+
+.hero-stage {
+    position: relative;
+    width: min(360px, 85vw);
+    aspect-ratio: 1 / 1;
+    perspective: 1100px;
+    perspective-origin: 50% 50%;
+    transform-style: preserve-3d;
+    isolation: isolate;
+}
+
+.stage-glow {
+    position: absolute;
+    inset: 8% 6%;
+    border-radius: 50%;
+    background:
+        radial-gradient(circle at 30% 40%, rgba(29, 78, 216, 0.34), transparent 52%),
+        radial-gradient(circle at 75% 68%, rgba(124, 58, 237, 0.26), transparent 52%),
+        radial-gradient(circle at 45% 80%, rgba(245, 158, 11, 0.20), transparent 56%);
+    filter: blur(18px);
+    z-index: 0;
+    animation: glowPulse 7s ease-in-out infinite;
+}
+
+.orbit-ring {
+    position: absolute;
+    inset: 12%;
+    border-radius: 50%;
+    border: 1px dashed rgba(29, 78, 216, 0.30);
+    transform: rotateX(70deg) rotateZ(12deg);
+    pointer-events: none;
+}
+
+.orbit-ring-b {
+    inset: 4%;
+    border-style: solid;
+    border-color: rgba(245, 158, 11, 0.22);
+    transform: rotateX(62deg) rotateZ(-18deg);
+    animation: ringSpin 22s linear infinite;
+}
+
+.hero-scene {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    animation: sceneSpin 18s linear infinite;
+    will-change: transform;
+}
+
+.scene-card {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 150px;
+    height: 170px;
+    margin: -85px 0 0 -75px;
+    padding: 1.1rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.42rem;
+    text-align: center;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.26);
+    border-radius: 20px;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.05));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow:
+        0 22px 46px -16px rgba(15, 23, 42, 0.45),
+        inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    transform: rotateY(calc(var(--i) * 120deg)) translateZ(138px) rotateX(-4deg);
+    transform-origin: center;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    overflow: hidden;
+}
+
+.scene-card::before {
+    content: "";
+    position: absolute;
+    inset: -40% -20% auto;
+    height: 72%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.28), transparent 64%);
+    pointer-events: none;
+}
+
+.scene-card strong {
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.scene-card small {
+    font-size: 0.72rem;
+    font-weight: 600;
+    opacity: 0.86;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.scene-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    background: rgba(15, 23, 42, 0.32);
+    border: 1px solid rgba(255, 255, 255, 0.20);
+}
+
+.scene-card--youtube {
+    background: linear-gradient(160deg, rgba(244, 63, 94, 0.75), rgba(127, 29, 29, 0.55));
+}
+
+.scene-card--shorts {
+    background: linear-gradient(160deg, rgba(6, 182, 212, 0.75), rgba(23, 37, 84, 0.55));
+}
+
+.scene-card--ai {
+    background: linear-gradient(160deg, rgba(168, 85, 247, 0.75), rgba(49, 46, 129, 0.55));
+}
+
+.scene-caption {
+    margin: 1.1rem 0 0;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--gray-500);
+}
+
+@keyframes sceneSpin {
+    from { transform: rotateY(0deg); }
+    to { transform: rotateY(360deg); }
+}
+
+@keyframes ringSpin {
+    from { transform: rotateX(62deg) rotateZ(-18deg) rotateY(0deg); }
+    to { transform: rotateX(62deg) rotateZ(-18deg) rotateY(360deg); }
+}
+
+@keyframes glowPulse {
+    0%, 100% { opacity: 0.75; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.08); }
+}
+
+.hero-stage.is-paused .hero-scene,
+.hero-stage.is-paused .orbit-ring-b {
+    animation-play-state: paused;
+}
+
+@media (max-width: 900px) {
+    .hero-layout {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .hero-copy {
+        text-align: center;
+    }
+
+    .hero .hero-copy .hero-tagline,
+    .hero .hero-copy .hero-actions,
+    .hero .hero-copy .hero-stats {
+        justify-content: center;
+    }
+
+    .hero .hero-copy .hero-desc {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .hero .hero-copy .hero-stats {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .hero-visual {
+        order: 2;
+        margin-top: 1rem;
+    }
+
+    .hero-stage {
+        width: min(300px, 82vw);
+    }
+
+    .scene-card {
+        width: 132px;
+        height: 152px;
+        margin: -76px 0 0 -66px;
+        transform: rotateY(calc(var(--i) * 120deg)) translateZ(120px) rotateX(-4deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-scene,
+    .orbit-ring-b,
+    .stage-glow {
+        animation: none !important;
+    }
+
+    .hero-stage {
+        perspective: none;
+    }
+}

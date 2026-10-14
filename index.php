@@ -23,34 +23,62 @@ if ($db_connected && $pdo) {
 ?>
 
 <section class="hero">
-    <div class="container">
-        <div class="hero-tagline"><i class="fas fa-certificate"></i> Rwanda's creator academy</div>
-        <h1 class="hero-title">Learn. Create. <span>Grow.</span></h1>
-        <p class="hero-lead">Practical digital skills from professional instructors.</p>
-        <p class="hero-desc">Build a YouTube channel, master Shorts, and produce long-form video with AI — at a fair price in RWF.</p>
+    <div class="container hero-layout">
+        <div class="hero-copy">
+            <div class="hero-tagline"><i class="fas fa-certificate"></i> Rwanda's creator academy</div>
+            <h1 class="hero-title">Learn. Create. <span>Grow.</span></h1>
+            <p class="hero-lead">Practical digital skills from professional instructors.</p>
+            <p class="hero-desc">Build a YouTube channel, master Shorts, and produce long-form video with AI — at a fair price in RWF.</p>
 
-        <div class="hero-actions">
-            <a href="<?= site_url('courses.php'); ?>" class="btn btn-primary btn-lg">
-                Explore courses <i class="fas fa-arrow-right"></i>
-            </a>
-            <a href="<?= site_url('register.php'); ?>" class="btn btn-outline btn-lg">
-                Join now
-            </a>
+            <div class="hero-actions">
+                <a href="<?= site_url('courses.php'); ?>" class="btn btn-primary btn-lg">
+                    Explore courses <i class="fas fa-arrow-right"></i>
+                </a>
+                <a href="<?= site_url('register.php'); ?>" class="btn btn-outline btn-lg">
+                    Join now
+                </a>
+            </div>
+
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <h3><?= count($courses); ?>+</h3>
+                    <p>Flagship programs</p>
+                </div>
+                <div class="stat-item">
+                    <h3>100%</h3>
+                    <p>Practical workflows</p>
+                </div>
+                <div class="stat-item">
+                    <h3>MoMo</h3>
+                    <p>Local payment support</p>
+                </div>
+            </div>
         </div>
 
-        <div class="hero-stats">
-            <div class="stat-item">
-                <h3><?= count($courses); ?>+</h3>
-                <p>Flagship programs</p>
+        <div class="hero-visual" aria-hidden="true">
+            <div class="hero-stage">
+                <div class="stage-glow"></div>
+                <div class="orbit-ring orbit-ring-a"></div>
+                <div class="orbit-ring orbit-ring-b"></div>
+                <div class="hero-scene">
+                    <article class="scene-card scene-card--youtube" style="--i: 0;">
+                        <span class="scene-card-icon"><i class="fab fa-youtube"></i></span>
+                        <strong>YouTube</strong>
+                        <small>Channel growth</small>
+                    </article>
+                    <article class="scene-card scene-card--shorts" style="--i: 1;">
+                        <span class="scene-card-icon"><i class="fas fa-bolt"></i></span>
+                        <strong>Shorts</strong>
+                        <small>Viral formats</small>
+                    </article>
+                    <article class="scene-card scene-card--ai" style="--i: 2;">
+                        <span class="scene-card-icon"><i class="fas fa-robot"></i></span>
+                        <strong>AI Video</strong>
+                        <small>Automated scale</small>
+                    </article>
+                </div>
             </div>
-            <div class="stat-item">
-                <h3>100%</h3>
-                <p>Practical workflows</p>
-            </div>
-            <div class="stat-item">
-                <h3>MoMo</h3>
-                <p>Local payment support</p>
-            </div>
+            <p class="scene-caption">An immersive studio for modern creators</p>
         </div>
     </div>
 </section>

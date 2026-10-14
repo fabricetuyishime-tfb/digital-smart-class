@@ -28,14 +28,30 @@ docker run --rm -p 8080:80 digital-smart-class
 ```
 
 ### Railway
-1. Create a new project from the GitHub repository.
-2. Add a **MySQL** database plugin.
-3. On the web service, add environment variables from `.env.example`
-   (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS`).
-4. Set `DB_IMPORT=1` once to import `database/digital_smart_class.sql`,
-   then set it back to `0`.
-5. Railway detects the `Dockerfile` automatically.
-6. Health check path: `/health.php`.
+1. Create a new project from the GitHub repository (branch `main`).
+2. Add a **MySQL** database plugin (New → Database → MySQL).
+3. On the **web service**, open **Variables** and add references to the MySQL
+   service (Railway substitutes these at runtime):
+   ```
+   DB_HOST = ${{MySQL.MYSQLHOST}}
+   DB_PORT = ${{MySQL.MYSQLPORT}}
+   DB_NAME = ${{MySQL.MYSQLDATABASE}}
+   DB_USER = ${{MySQL.MYSQLUSER}}
+   DB_PASS = ${{MySQL.MYSQLPASSWORD}}
+   DB_IMPORT = 1
+   ```
+   Alternatively, reference the whole connection string once:
+   ```
+   MYSQL_URL = ${{MySQL.MYSQL_URL}}
+   ```
+   `config/database.php` understands both forms plus the raw Railway names
+   (`MYSQLHOST`, `MYSQLPORT`, `MYSQLUSER`, `MYSQLPASSWORD`, `MYSQLDATABASE`).
+4. `railway.json` (already in the repo) pins the **Dockerfile** builder — this is
+   what prevents the `AH00534: More than one MPM loaded` crash. Redeploy after
+   pushing, and choose **Clear build cache**.
+5. `DB_IMPORT=1` imports `database/digital_smart_class.sql` on first boot; the
+   entrypoint skips the import once tables exist, so it is safe to leave on.
+6. Health check path: `/health.php` (already configured in `railway.json`).
 
 ### Render
 1. New → **Web Service** → connect the repository.
@@ -61,11 +77,15 @@ docker run --rm -p 8080:80 digital-smart-class
 See `.env.example`. The application reads them with `getenv()`:
 
 - `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS`
-- `DB_IMPORT` (Docker only; optional one-time seed import)
+- `MYSQL_URL` / `DATABASE_URL` (a `mysql://user:pass@host:port/db` string)
+- `MYSQLHOST`, `MYSQLPORT`, `MYSQLUSER`, `MYSQLPASSWORD`, `MYSQLDATABASE`
+  (Railway's MySQL plugin variable names)
+- `DB_IMPORT` (Docker only; imports the seed on first boot, then skips)
+- `PORT` (injected by the host; Apache is reconfigured to listen on it)
 
-`config/database.php` falls back to the local XAMPP defaults
-(`localhost` / `root` / empty password) when variables are not set, so local
-development keeps working unchanged.
+Explicit `DB_*` values win. If they are absent, the app falls back to the
+Railway variables or connection string, then to the local XAMPP defaults
+(`localhost` / `root` / empty password) so local development keeps working.
 
 ## Persistent uploads
 Serverless platforms lose local files on deploy. With Docker hosts, mount a

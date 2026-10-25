@@ -37,7 +37,7 @@ fi
 
 # When launched with the default command, bind to the platform port.
 if [ "${1:-}" = "php" ] && [ "${2:-}" = "-S" ]; then
-    exec php -S "0.0.0.0:${APP_PORT}" -t /var/www/html /var/www/html/router.php
+    exec php -S "0.0.0.0:${APP_PORT}" -t /var/www/html /var/www/html/router.php 2>&1
 fi
 
 exec "$@"

@@ -58,6 +58,11 @@ docker run --rm -p 8080:80 digital-smart-class
    entrypoint skips the import once tables exist, so it is safe to leave on.
 6. Health check path: `/health.php` (already configured in `railway.json`).
 
+The seed importer uses TLS for Railway's MySQL service and skips certificate
+verification because Railway presents a self-signed certificate. Keep the
+database on Railway's private network; do not expose it through a public TCP
+proxy.
+
 ### Render
 1. New → **Web Service** → connect the repository.
 2. Runtime: **Docker**.

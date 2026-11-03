@@ -83,6 +83,25 @@ if ($db_connected && $pdo) {
     </div>
 </section>
 
+<section class="promo-banner">
+    <div class="container">
+        <div class="promo-banner-inner">
+            <div class="promo-copy">
+                <span class="promo-kicker">Smart Class protection campaign</span>
+                <h2>YOUTUBE CHANNEL DELETED?<br><span>Smart Class is to the rescue!</span></h2>
+                <p>We help creators recover hacked, deleted, or suspended channels and protect future growth with proactive security and recovery support.</p>
+                <div class="promo-actions">
+                    <a href="<?= site_url('register.php'); ?>" class="btn btn-primary btn-lg">Rescue My Channel</a>
+                    <a href="<?= site_url('contact.php'); ?>" class="btn btn-outline btn-lg">Talk to an expert</a>
+                </div>
+            </div>
+            <div class="promo-visual">
+                <img src="<?= site_url('assets/images/smart-class-channel-rescue.png'); ?>" alt="Smart Class YouTube channel recovery advertisement">
+            </div>
+        </div>
+    </div>
+</section>
+
 <section class="why-section">
     <div class="container">
         <div class="section-header">

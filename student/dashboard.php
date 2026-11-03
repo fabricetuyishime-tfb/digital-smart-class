@@ -153,6 +153,20 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
         </div>
 
+        <section class="dashboard-promo-card" aria-label="Smart Class channel recovery campaign">
+            <div class="dashboard-promo-copy">
+                <span class="dashboard-promo-tag">Smart Class support</span>
+                <h3>YOUTUBE CHANNEL DELETED?</h3>
+                <p>We recover hacked, suspended, or deleted channels and protect your audience from future losses.</p>
+                <div class="dashboard-promo-actions">
+                    <a href="<?= site_url('contact.php'); ?>" class="btn btn-primary btn-sm">Get a free consultation</a>
+                </div>
+            </div>
+            <div class="dashboard-promo-image">
+                <img src="<?= site_url('assets/images/smart-class-channel-rescue.png'); ?>" alt="Smart Class advertisement for channel recovery">
+            </div>
+        </section>
+
         <section class="student-announcements" aria-labelledby="announcements-title">
             <div class="student-announcements-header">
                 <div>

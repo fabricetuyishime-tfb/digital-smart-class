@@ -254,6 +254,85 @@ img {
     box-shadow: 0 16px 28px -12px rgba(30, 58, 138, 0.9);
 }
 
+.promo-banner {
+    padding: 2.5rem 0 0.5rem;
+}
+
+.promo-banner-inner {
+    display: grid;
+    grid-template-columns: 1.08fr 1fr;
+    background: linear-gradient(135deg, rgba(7, 20, 39, 0.98), rgba(10, 42, 80, 0.96));
+    border: 1px solid rgba(96, 165, 250, 0.3);
+    border-radius: 30px;
+    overflow: hidden;
+    box-shadow: 0 30px 70px -38px rgba(15, 23, 42, 0.8);
+}
+
+.promo-copy {
+    padding: 2.5rem clamp(1.2rem, 3vw, 3rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.promo-kicker {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    border-radius: 999px;
+    padding: 0.45rem 0.8rem;
+    background: rgba(14, 165, 233, 0.12);
+    color: #7dd3fc;
+    font-size: 0.73rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 800;
+    margin-bottom: 1rem;
+}
+
+.promo-copy h2 {
+    font-size: clamp(2rem, 4vw, 4.25rem);
+    line-height: 0.98;
+    letter-spacing: -0.06em;
+    color: #f8fafc;
+    margin-bottom: 1rem;
+}
+
+.promo-copy h2 span {
+    display: block;
+    color: #fcd34d;
+    text-shadow: 0 0 18px rgba(252, 211, 77, 0.45);
+}
+
+.promo-copy p {
+    max-width: 620px;
+    color: #dbeafe;
+    font-size: 1.02rem;
+    margin-bottom: 1.5rem;
+}
+
+.promo-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+}
+
+.promo-visual {
+    background: linear-gradient(180deg, rgba(12, 38, 66, 0.75), rgba(17, 24, 39, 0.2));
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.promo-visual img {
+    width: 100%;
+    max-width: 620px;
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow: 0 22px 50px -26px rgba(248, 250, 252, 0.7);
+}
+
 .btn-outline {
     background: rgba(255, 255, 255, 0.7);
     border-color: var(--gray-300);

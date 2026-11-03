@@ -2,6 +2,8 @@
 require_once __DIR__ . '/../includes/student-auth.php';
 $user = current_user();
 $page_title = "Student Dashboard — DIGITAL SMART CLASS";
+$demoMode = !empty($_SESSION['demo_mode']);
+$dashboardError = null;
 
 // Fetch student metrics
 $totalPlatformCourses = 3;
@@ -13,18 +15,24 @@ $announcements = [];
 
 if ($db_connected && $pdo) {
     try {
-        $totalPlatformCourses = $pdo->query("SELECT COUNT(*) FROM courses WHERE status = 'published'")->fetchColumn() ?: 3;
+        $totalPlatformCourses = (int)$pdo->query("SELECT COUNT(*) FROM courses WHERE status = 'published'")->fetchColumn();
         
         $eStmt = $pdo->prepare("SELECT COUNT(*) FROM enrollments WHERE user_id = :uid");
         $eStmt->execute(['uid' => $user['id']]);
-        $enrolledCoursesCount = $eStmt->fetchColumn() ?: 0;
+        $enrolledCoursesCount = (int)$eStmt->fetchColumn();
 
-        // Fetch active enrolled course with highest progress
+        $completedStmt = $pdo->prepare("SELECT COUNT(*) FROM enrollments WHERE user_id = :uid AND status = 'completed'");
+        $completedStmt->execute(['uid' => $user['id']]);
+        $completedCoursesCount = (int)$completedStmt->fetchColumn();
+
         $actStmt = $pdo->prepare("
-            SELECT c.*, e.status as enrollment_status
+            SELECT c.*, e.status as enrollment_status,
+                   (SELECT COUNT(*) FROM lesson_progress lp
+                    WHERE lp.course_id = c.id AND lp.user_id = e.user_id AND lp.is_completed = 1) AS completed_lessons
             FROM enrollments e
             JOIN courses c ON e.course_id = c.id
             WHERE e.user_id = :uid AND e.status = 'active'
+            ORDER BY e.enrolled_at DESC
             LIMIT 1
         ");
         $actStmt->execute(['uid' => $user['id']]);
@@ -50,11 +58,12 @@ if ($db_connected && $pdo) {
         $announcementStmt->execute(['uid' => $user['id']]);
         $announcements = $announcementStmt->fetchAll();
     } catch (PDOException $e) {
-        // Fallback demo metrics
+        log_database_error('Load student dashboard', $e);
+        $dashboardError = 'Some dashboard information could not be loaded. Please refresh the page.';
     }
 }
 
-if (empty($announcements)) {
+if (empty($announcements) && $demoMode) {
     $announcements = [
         [
             'id' => 0,
@@ -75,14 +84,21 @@ if (empty($announcements)) {
     ];
 }
 
-// Demo fallback if student has no enrollments yet
-if (!$activeCourse) {
+if (!$db_connected && $demoMode && !$activeCourse) {
     $activeCourse = [
         'id' => 2,
         'title' => 'YouTube Shorts Creation — From Idea to Short',
-        'progress_pct' => 80
+        'progress_pct' => 80,
+        'completed_lessons' => 8,
+        'total_lessons' => 10
     ];
 }
+if (!$db_connected && $demoMode) {
+    $recommendedCourses = array_slice(get_fallback_courses(), 0, 3);
+}
+$activeCourseProgress = $activeCourse
+    ? min(100, (int)round(((int)($activeCourse['completed_lessons'] ?? 0) / max(1, (int)($activeCourse['total_lessons'] ?? 0))) * 100))
+    : 0;
 
 require_once __DIR__ . '/../includes/header.php';
 ?>
@@ -130,6 +146,9 @@ require_once __DIR__ . '/../includes/header.php';
 
     <!-- Main Content Area -->
     <main class="dashboard-main">
+        <?php if ($dashboardError): ?>
+            <div class="alert alert-danger" role="alert"><?= e($dashboardError); ?></div>
+        <?php endif; ?>
         <div class="dashboard-title-bar">
             <div>
                 <h2>Welcome Back, <?= e(explode(' ', $user['full_name'])[0]); ?>!</h2>
@@ -137,19 +156,18 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
         </div>
 
-        <!-- 3 Stats Cards (Courses: 15, Enrolled: 3, Completed: 1 from Section 7) -->
-        <div class="dashboard-grid-stats" style="grid-template-columns: repeat(3, 1fr); max-width: 600px;">
+        <div class="dashboard-grid-stats portal-stats-grid">
             <div class="stat-box">
                 <div class="stat-box-title">Courses</div>
                 <div class="stat-box-value"><?= $totalPlatformCourses; ?></div>
             </div>
             <div class="stat-box">
                 <div class="stat-box-title">Enrolled</div>
-                <div class="stat-box-value" style="color: var(--primary);"><?= $enrolledCoursesCount ?: 2; ?></div>
+                <div class="stat-box-value" style="color: var(--primary);"><?= $enrolledCoursesCount; ?></div>
             </div>
             <div class="stat-box">
                 <div class="stat-box-title">Completed</div>
-                <div class="stat-box-value" style="color: var(--success);"><?= $completedCoursesCount ?: 1; ?></div>
+                <div class="stat-box-value" style="color: var(--success);"><?= $completedCoursesCount; ?></div>
             </div>
         </div>
 
@@ -180,8 +198,11 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
 
             <div class="announcement-list">
-                <?php foreach ($announcements as $announcement): ?>
-                    <article class="announcement-card <?= empty($announcement['is_read']) ? 'announcement-unread' : ''; ?>">
+                <?php if (empty($announcements)): ?>
+                    <p class="dashboard-empty-state">You’re all caught up. Important course and platform updates will appear here.</p>
+                <?php else: ?>
+                    <?php foreach ($announcements as $announcement): ?>
+                        <article class="announcement-card <?= empty($announcement['is_read']) ? 'announcement-unread' : ''; ?>">
                         <div class="announcement-card-icon">
                             <i class="fas <?= empty($announcement['is_read']) ? 'fa-bullhorn' : 'fa-book-open'; ?>"></i>
                         </div>
@@ -200,71 +221,69 @@ require_once __DIR__ . '/../includes/header.php';
                                 </a>
                             <?php endif; ?>
                         </div>
-                    </article>
-                <?php endforeach; ?>
+                        </article>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
         </section>
 
-        <!-- Continue Learning Box (Section 7 Mockup) -->
-        <div style="margin-bottom: 2.5rem;">
+        <section class="dashboard-content-section">
             <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 1rem;">
                 Continue Learning
             </h3>
 
-            <div class="learning-card" style="border-left: 4px solid var(--primary); background: #ffffff;">
-                <h4 style="font-size: 1.15rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem;">
-                    <?= e($activeCourse['title']); ?>
-                </h4>
-                
-                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; color: #475569;">
-                    <span>Course Progress</span>
-                    <span style="color: var(--primary);">Progress: 80%</span>
-                </div>
-
-                <div class="progress-container">
-                    <div class="progress-bar-fill" style="width: 80%;"></div>
-                </div>
-
-                <div style="margin-top: 1.25rem;">
-                    <a href="<?= site_url('student/learning.php?course_id=' . $activeCourse['id']); ?>" class="btn btn-primary">
-                        <i class="fas fa-play"></i> CONTINUE LEARNING
+            <?php if ($activeCourse): ?>
+                <div class="learning-card student-continue-card">
+                    <h4><?= e($activeCourse['title']); ?></h4>
+                    <div class="student-course-progress-label">
+                        <span>Course progress</span>
+                        <strong><?= $activeCourseProgress; ?>%</strong>
+                    </div>
+                    <div class="progress-container" role="progressbar" aria-label="Course progress" aria-valuenow="<?= $activeCourseProgress; ?>" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar-fill" style="width: <?= $activeCourseProgress; ?>%;"></div>
+                    </div>
+                    <a href="<?= site_url('student/learning.php?course_id=' . (int)$activeCourse['id']); ?>" class="btn btn-primary">
+                        <i class="fas fa-play"></i> Continue learning
                     </a>
                 </div>
-            </div>
-        </div>
+            <?php else: ?>
+                <div class="dashboard-empty-state">
+                    <h4>No active course yet</h4>
+                    <p>Once a payment is approved, your course and lesson progress will appear here.</p>
+                    <a href="<?= site_url('student/courses.php'); ?>" class="btn btn-outline">Browse courses</a>
+                </div>
+            <?php endif; ?>
+        </section>
 
-        <!-- Recommended Courses Section (Section 7 Mockup) -->
-        <div>
+        <section class="dashboard-content-section">
             <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 1rem;">
                 Recommended Courses
             </h3>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem;">
-                <div class="stat-box" style="display: flex; flex-direction: column; justify-content: space-between;">
-                    <div>
-                        <span class="badge" style="background: #fee2e2; color: #991b1b; margin-bottom: 0.5rem;">Beginner</span>
-                        <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem;">Understand YouTube — Beginner to Confident Creator</h4>
-                        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">10 Lessons • 4 Weeks</p>
+            <div class="student-recommended-grid">
+                <?php if (empty($recommendedCourses)): ?>
+                    <div class="dashboard-empty-state">
+                        <p>You’re enrolled in every available course. Check back soon for new programs.</p>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 0.75rem;">
-                        <strong>30,000 RWF</strong>
-                        <a href="<?= site_url('course-details.php?id=1'); ?>" class="btn btn-sm btn-outline-primary">View</a>
-                    </div>
-                </div>
-
-                <div class="stat-box" style="display: flex; flex-direction: column; justify-content: space-between;">
-                    <div>
-                        <span class="badge" style="background: #f3e8ff; color: #6b21a8; margin-bottom: 0.5rem;">Intermediate</span>
-                        <h4 style="font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem;">Make Long Videos With AI — Complete AI Video Creation</h4>
-                        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">15 Lessons • 6 Weeks</p>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f1f5f9; padding-top: 0.75rem;">
-                        <strong>40,000 RWF</strong>
-                        <a href="<?= site_url('course-details.php?id=3'); ?>" class="btn btn-sm btn-outline-primary">View</a>
-                    </div>
-                </div>
+                <?php else: ?>
+                    <?php foreach ($recommendedCourses as $course): ?>
+                        <article class="stat-box student-recommended-card">
+                            <div>
+                                <span class="badge student-recommended-level"><?= e($course['level'] ?? 'All levels'); ?></span>
+                                <h4><?= e($course['title']); ?></h4>
+                                <p><?= e($course['total_lessons'] ?? 'Self-paced'); ?> lessons
+                                    <?php if (!empty($course['duration_weeks'])): ?> · <?= e($course['duration_weeks']); ?><?php endif; ?>
+                                </p>
+                            </div>
+                            <div class="student-recommended-footer">
+                                <strong><?= format_money($course['price'] ?? 0, $course['currency'] ?? 'RWF'); ?></strong>
+                                <a href="<?= site_url('student/course-details.php?id=' . (int)$course['id']); ?>" class="btn btn-sm btn-outline-primary">View course</a>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
-        </div>
+        </section>
     </main>
 </div>
 

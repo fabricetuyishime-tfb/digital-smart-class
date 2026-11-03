@@ -5,19 +5,37 @@ $page_title = "Learning Progress — DIGITAL SMART CLASS";
 
 // Fetch student progress across enrolled courses
 $coursesProgress = [];
+$recentVideoProgress = [];
+$progressError = null;
 if ($db_connected && $pdo) {
     try {
         $stmt = $pdo->prepare("
-            SELECT c.id, c.title, c.total_lessons, c.duration_hours,
-                   (SELECT COUNT(*) FROM lesson_progress lp WHERE lp.course_id = c.id AND lp.user_id = :uid AND lp.is_completed = 1) as completed_lessons
+            SELECT c.id, c.title, c.total_lessons, c.duration_hours, e.status,
+                   (SELECT COUNT(*) FROM lesson_progress lp
+                    WHERE lp.course_id = c.id AND lp.user_id = :progress_uid AND lp.is_completed = 1) as completed_lessons
             FROM enrollments e
             JOIN courses c ON e.course_id = c.id
-            WHERE e.user_id = :uid AND e.status = 'active'
+            WHERE e.user_id = :enrollment_uid AND e.status IN ('active', 'completed')
         ");
-        $stmt->execute(['uid' => $user['id']]);
+        $stmt->execute(['progress_uid' => $user['id'], 'enrollment_uid' => $user['id']]);
         $coursesProgress = $stmt->fetchAll();
+
+        $videoStmt = $pdo->prepare("
+            SELECT c.title AS course_title, l.title AS lesson_title,
+                   vp.watch_percentage, vp.watched_seconds, vp.total_seconds, vp.is_completed, vp.updated_at
+            FROM video_progress vp
+            JOIN lessons l ON l.id = vp.lesson_id
+            JOIN modules m ON m.id = l.module_id
+            JOIN courses c ON c.id = m.course_id
+            WHERE vp.user_id = :uid
+            ORDER BY vp.updated_at DESC
+            LIMIT 3
+        ");
+        $videoStmt->execute(['uid' => $user['id']]);
+        $recentVideoProgress = $videoStmt->fetchAll();
     } catch (PDOException $e) {
-        $coursesProgress = [];
+        log_database_error('Load student progress', $e);
+        $progressError = 'Your learning progress could not be loaded. Please refresh the page.';
     }
 }
 
@@ -48,6 +66,9 @@ require_once __DIR__ . '/../includes/header.php';
     </aside>
 
     <main class="dashboard-main">
+        <?php if ($progressError): ?>
+            <div class="alert alert-danger" role="alert"><?= e($progressError); ?></div>
+        <?php endif; ?>
         <div class="dashboard-title-bar">
             <div>
                 <h2>Learning Progress & Completion</h2>
@@ -55,67 +76,64 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
         </div>
 
-        <!-- Section 11 Video Progress Example Box -->
-        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; max-width: 750px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h3 style="font-size: 1.2rem; font-weight: 800; color: #0f172a;">
-                    YouTube Shorts Creation — Lesson 5: Recording Shorts
-                </h3>
-                <span class="badge badge-active" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">
-                    STATUS: COMPLETED
-                </span>
-            </div>
+        <section class="progress-activity-section" aria-labelledby="recent-video-title">
+            <h3 id="recent-video-title">Recent video activity</h3>
+            <?php if (empty($recentVideoProgress)): ?>
+                <div class="dashboard-empty-state">Video watch progress will appear here as you study lessons.</div>
+            <?php else: ?>
+                <div class="progress-activity-list">
+                    <?php foreach ($recentVideoProgress as $video): ?>
+                        <?php $videoPercent = min(100, max(0, (int)round((float)$video['watch_percentage']))); ?>
+                        <article class="progress-activity-card">
+                            <div class="progress-activity-heading">
+                                <div>
+                                    <h4><?= e($video['lesson_title']); ?></h4>
+                                    <p><?= e($video['course_title']); ?></p>
+                                </div>
+                                <span class="badge <?= !empty($video['is_completed']) ? 'badge-approved' : 'badge-pending'; ?>">
+                                    <?= !empty($video['is_completed']) ? 'Completed' : 'In progress'; ?>
+                                </span>
+                            </div>
+                            <div class="student-course-progress-label">
+                                <span><?= (int)floor((int)$video['watched_seconds'] / 60); ?> minutes watched</span>
+                                <strong><?= $videoPercent; ?>%</strong>
+                            </div>
+                            <div class="progress-container" role="progressbar" aria-label="Video watch progress" aria-valuenow="<?= $videoPercent; ?>" aria-valuemin="0" aria-valuemax="100">
+                                <div class="progress-bar-fill" style="width: <?= $videoPercent; ?>%;"></div>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </section>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; font-size: 0.95rem; color: #475569;">
-                <div>Video Duration: <strong>40 minutes</strong></div>
-                <div>Watched: <strong>36 minutes</strong></div>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; color: #334155; margin-bottom: 0.35rem;">
-                <span>Video Progress</span>
-                <span style="color: var(--success);">90% (Threshold Met)</span>
-            </div>
-            <div class="progress-container">
-                <div class="progress-bar-fill" style="width: 90%; background: #10b981;"></div>
-            </div>
-        </div>
-
-        <!-- Course Progression Cards -->
-        <h3 style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 1rem;">All Enrolled Masterclasses</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.5rem;">
+        <section class="progress-courses-section">
+            <h3>Course progress</h3>
+            <div class="progress-course-grid">
             <?php if (empty($coursesProgress)): ?>
-                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.75rem;">
-                    <h4 style="font-weight: 700; color: #0f172a; margin-bottom: 0.5rem;">YouTube Shorts Creation — From Idea to Short</h4>
-                    <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">10 of 12 Lessons Completed</p>
-                    <div class="progress-container">
-                        <div class="progress-bar-fill" style="width: 83%;"></div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-top: 0.5rem;">
-                        <span style="font-weight: 700; color: var(--primary);">83% Completed</span>
-                        <a href="<?= site_url('student/learning.php?course_id=2'); ?>" style="font-weight: 600;">Continue Learning &rarr;</a>
-                    </div>
+                <div class="dashboard-empty-state">
+                    <h4>No course progress yet</h4>
+                    <p>Enroll in a course to see lesson completion and progress here.</p>
+                    <a href="<?= site_url('student/courses.php'); ?>" class="btn btn-outline">Browse courses</a>
                 </div>
             <?php else: ?>
                 <?php foreach ($coursesProgress as $cp): ?>
-                    <?php 
-                        $pct = $cp['total_lessons'] > 0 ? round(($cp['completed_lessons'] / $cp['total_lessons']) * 100) : 0;
-                    ?>
-                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.75rem;">
-                        <h4 style="font-weight: 700; color: #0f172a; margin-bottom: 0.5rem;"><?= e($cp['title']); ?></h4>
-                        <p style="font-size: 0.85rem; color: #64748b; margin-bottom: 1rem;">
-                            <?= $cp['completed_lessons']; ?> of <?= $cp['total_lessons']; ?> Lessons Completed
-                        </p>
-                        <div class="progress-container">
+                    <?php $pct = (int)$cp['total_lessons'] > 0 ? min(100, (int)round(((int)$cp['completed_lessons'] / (int)$cp['total_lessons']) * 100)) : 0; ?>
+                    <article class="progress-course-card">
+                        <h4><?= e($cp['title']); ?></h4>
+                        <p><?= (int)$cp['completed_lessons']; ?> of <?= (int)$cp['total_lessons']; ?> lessons completed</p>
+                        <div class="progress-container" role="progressbar" aria-label="Course progress" aria-valuenow="<?= $pct; ?>" aria-valuemin="0" aria-valuemax="100">
                             <div class="progress-bar-fill" style="width: <?= $pct; ?>%;"></div>
                         </div>
-                        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-top: 0.5rem;">
-                            <span style="font-weight: 700; color: var(--primary);"><?= $pct; ?>% Completed</span>
-                            <a href="<?= site_url('student/learning.php?course_id=' . $cp['id']); ?>" style="font-weight: 600;">Open Lessons &rarr;</a>
+                        <div class="progress-course-footer">
+                            <span><?= $pct; ?>% complete · <?= e(ucfirst($cp['status'])); ?></span>
+                            <a href="<?= site_url('student/learning.php?course_id=' . (int)$cp['id']); ?>">Open course</a>
                         </div>
-                    </div>
+                    </article>
                 <?php endforeach; ?>
             <?php endif; ?>
-        </div>
+            </div>
+        </section>
     </main>
 </div>
 

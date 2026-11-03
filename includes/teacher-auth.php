@@ -20,27 +20,46 @@ if ($currentUser['role'] !== 'teacher' && $currentUser['role'] !== 'admin') {
     exit;
 }
 
-// Check approval status in database
+if ($currentUser['role'] === 'teacher' && (!$db_connected || !$pdo)) {
+    if (empty($_SESSION['demo_mode'])) {
+        set_flash('error', 'Teacher access is temporarily unavailable because the database connection could not be verified.');
+        header("Location: " . site_url('login.php'));
+        exit;
+    }
+}
+
 if ($currentUser['role'] === 'teacher' && $db_connected && $pdo) {
     try {
-        $stmt = $pdo->prepare("SELECT status FROM users WHERE id = :id LIMIT 1");
+        $stmt = $pdo->prepare("
+            SELECT u.status, r.name AS role_name
+            FROM users u
+            JOIN roles r ON r.id = u.role_id
+            WHERE u.id = :id
+            LIMIT 1
+        ");
         $stmt->execute(['id' => $currentUser['id']]);
-        $status = $stmt->fetchColumn();
+        $account = $stmt->fetch();
+        $currentScript = basename($_SERVER['SCRIPT_NAME']);
 
-        if ($status === 'pending') {
-            // Check if current page is already application.php
-            $currentScript = basename($_SERVER['SCRIPT_NAME']);
-            if ($currentScript !== 'application.php') {
-                set_flash('info', 'Your teacher application is currently PENDING approval from the Administrator. You will receive teaching privileges once approved.');
-                header("Location: " . site_url('teacher/application.php'));
-                exit;
-            }
-        } elseif ($status === 'suspended' || $status === 'inactive') {
-            set_flash('error', 'Your teacher account is currently suspended. Please contact the administrator.');
+        if (!$account || $account['role_name'] !== 'teacher') {
+            set_flash('error', 'This account does not have teacher access. Please sign in with an approved teacher account.');
             header("Location: " . site_url('index.php'));
+            exit;
+        } elseif ($account['status'] === 'suspended') {
+            set_flash('error', 'Your teacher account is suspended. Please contact the administrator.');
+            header("Location: " . site_url('index.php'));
+            exit;
+        } elseif ($account['status'] !== 'active' && $currentScript !== 'application.php') {
+            set_flash('info', 'Your teacher application is awaiting approval. Instructor tools will be available after administrator review.');
+            header("Location: " . site_url('teacher/application.php'));
             exit;
         }
     } catch (PDOException $e) {
-        // Continue if DB check fails
+        log_database_error('Verify teacher access', $e);
+        if (basename($_SERVER['SCRIPT_NAME']) !== 'application.php') {
+            set_flash('error', 'Teacher access could not be verified. Please try again later.');
+            header("Location: " . site_url('teacher/application.php'));
+            exit;
+        }
     }
 }

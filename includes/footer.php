@@ -15,9 +15,6 @@
                     <p><i class="fab fa-whatsapp"></i> <a href="<?= e(support_whatsapp_url('Hello Digital Smart Class support team, I need assistance.')); ?>" target="_blank" rel="noopener">WhatsApp Support</a></p>
                 </div>
                 <div class="social-row">
-                    <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
-                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                    <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
                     <a href="<?= e(support_whatsapp_url('Hello Digital Smart Class support team, I need assistance.')); ?>" target="_blank" rel="noopener" aria-label="Chat with support on WhatsApp"><i class="fab fa-whatsapp"></i></a>
                 </div>
             </div>
@@ -46,7 +43,8 @@
                 <ul class="footer-links">
                     <li><a href="<?= site_url('about.php'); ?>">About Us</a></li>
                     <li><a href="<?= site_url('contact.php'); ?>">Contact & Support</a></li>
-                    <li><a href="<?= site_url('login.php'); ?>">Teacher Portal</a></li>
+                    <li><a href="<?= site_url('teacher/application.php'); ?>">Teach with us</a></li>
+                    <li><a href="<?= site_url('login.php'); ?>">Teacher sign in</a></li>
                     <li><a href="<?= site_url('register.php'); ?>">Create Account</a></li>
                 </ul>
             </div>

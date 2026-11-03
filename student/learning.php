@@ -307,28 +307,10 @@ require_once __DIR__ . '/../includes/header.php';
                 </div>
 
                 <?php if (empty($modules)): ?>
-                    <!-- Section 10 Mockup Modules Representation -->
-                    <div class="curriculum-module-header">MODULE 1 — INTRODUCTION</div>
-                    <a href="#" class="lesson-list-item">
-                        <span><i class="fas fa-check" style="color: var(--success); margin-right: 0.5rem;"></i> Lesson 1: Understanding Shorts</span>
-                    </a>
-                    <a href="#" class="lesson-list-item">
-                        <span><i class="fas fa-check" style="color: var(--success); margin-right: 0.5rem;"></i> Lesson 2: Finding Ideas</span>
-                    </a>
-                    <a href="#" class="lesson-list-item">
-                        <span><i class="fas fa-check" style="color: var(--success); margin-right: 0.5rem;"></i> Lesson 3: Creating Hooks</span>
-                    </a>
-
-                    <div class="curriculum-module-header">MODULE 2 — CREATION</div>
-                    <a href="#" class="lesson-list-item">
-                        <span><i class="fas fa-check" style="color: var(--success); margin-right: 0.5rem;"></i> Lesson 4: Writing Scripts</span>
-                    </a>
-                    <a href="#" class="lesson-list-item active">
-                        <span><i class="fas fa-play" style="color: var(--primary); margin-right: 0.5rem;"></i> Lesson 5: Recording Shorts</span>
-                    </a>
-                    <a href="#" class="lesson-list-item locked">
-                        <span><i class="fas fa-lock" style="margin-right: 0.5rem;"></i> Lesson 6: Editing Shorts</span>
-                    </a>
+                    <div class="dashboard-empty-state">
+                        <h4>Course content is being prepared</h4>
+                        <p>Your instructor has not published any modules for this course yet. Please check back soon.</p>
+                    </div>
                 <?php else: ?>
                     <?php foreach ($modules as $mIndex => $mod): ?>
                         <div class="curriculum-module-header">

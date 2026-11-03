@@ -11,9 +11,9 @@ if ($currentUser && $db_connected && $pdo) {
     try {
         $nStmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = :uid AND is_read = 0");
         $nStmt->execute(['uid' => $currentUser['id']]);
-        $unreadNotifications = $nStmt->fetchColumn() ?: 0;
+        $unreadNotifications = (int)$nStmt->fetchColumn();
     } catch (PDOException $e) {
-        $unreadNotifications = 0;
+        log_database_error('Load unread notification count', $e);
     }
 }
 ?>
@@ -43,15 +43,18 @@ if ($currentUser && $db_connected && $pdo) {
                 <li><a href="<?= site_url('courses.php'); ?>" class="nav-link">Courses</a></li>
                 <li><a href="<?= site_url('about.php'); ?>" class="nav-link">About</a></li>
                 <li><a href="<?= site_url('contact.php'); ?>" class="nav-link">Contact</a></li>
+                <?php if (!$currentUser || has_role(['student', 'teacher'])): ?>
+                    <li><a href="<?= site_url('teacher/application.php'); ?>" class="nav-link">Teach with us</a></li>
+                <?php endif; ?>
             </ul>
 
             <div class="nav-actions">
             <?php if (is_logged_in()): ?>
                 <!-- Notification Bell -->
-                <a href="<?= site_url('student/notifications.php'); ?>" class="nav-icon-link" title="Notifications">
+                <a href="<?= site_url('notifications.php'); ?>" class="nav-icon-link" title="Notifications" aria-label="Notifications<?= $unreadNotifications > 0 ? ', ' . $unreadNotifications . ' unread' : ''; ?>">
                     <i class="fas fa-bell"></i>
                     <?php if ($unreadNotifications > 0): ?>
-                        <span class="notification-badge"><?= $unreadNotifications; ?></span>
+                        <span class="notification-badge" aria-hidden="true"><?= $unreadNotifications; ?></span>
                     <?php endif; ?>
                 </a>
 

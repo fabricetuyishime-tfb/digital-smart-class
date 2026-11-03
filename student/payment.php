@@ -9,81 +9,156 @@ $page_title = "Payment & Verification — Digital Smart Class";
 
 $selectedCourseId = isset($_GET['course_id']) ? (int)$_GET['course_id'] : 1;
 $error = null;
-$success = null;
+$historyError = null;
+$paymentUnavailable = null;
 
-// Fetch courses for dropdown
 $courses = [];
 if ($db_connected && $pdo) {
     try {
         $cStmt = $pdo->query("SELECT id, title, price, currency FROM courses WHERE status = 'published'");
         $courses = $cStmt->fetchAll();
     } catch (PDOException $e) {
-        $courses = get_fallback_courses();
+        log_database_error('Load payment course options', $e);
+        $error = 'Course payment options could not be loaded. Please try again later.';
     }
 } else {
-    $courses = get_fallback_courses();
+    $paymentUnavailable = 'Payment submission is temporarily unavailable because the course database is not connected. No payment will be recorded in preview mode.';
 }
 
-// Handle Payment Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $courseId = (int)($_POST['course_id'] ?? 1);
-    $amount = (float)($_POST['amount'] ?? 30000);
-    $method = trim($_POST['payment_method'] ?? 'MTN Mobile Money');
+    $courseId = filter_var($_POST['course_id'] ?? null, FILTER_VALIDATE_INT);
+    $method = trim($_POST['payment_method'] ?? '');
     $txRef = trim($_POST['transaction_ref'] ?? '');
-    
-    if (empty($txRef)) {
-        $error = "Please provide the Transaction Reference ID or Mobile Money confirmation code.";
-    } elseif ($db_connected && $pdo) {
+    $selectedCourseId = $courseId ?: $selectedCourseId;
+    $allowedMethods = ['MTN Mobile Money', 'Airtel Money', 'Bank Transfer', 'Cash'];
+
+    if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
+        $error = 'Your session expired. Refresh the page and submit your payment again.';
+    } elseif (!$db_connected || !$pdo) {
+        $error = 'Payment submissions require a live database connection. No payment record was created.';
+    } elseif (!$courseId || $courseId < 1) {
+        $error = 'Choose a valid course before submitting payment.';
+    } elseif (!in_array($method, $allowedMethods, true)) {
+        $error = 'Choose a valid payment method.';
+    } elseif ($txRef === '' || strlen($txRef) > 100) {
+        $error = 'Enter a transaction reference between 1 and 100 characters.';
+    } elseif ($error === null) {
+        $savedProof = null;
         try {
-            // Handle optional proof upload
-            $proofPath = null;
-            if (!empty($_FILES['proof_file']['name'])) {
-                $targetDir = __DIR__ . '/../uploads/payments/';
-                if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
-                
-                $fileName = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '', $_FILES['proof_file']['name']);
-                $targetFilePath = $targetDir . $fileName;
-                
-                if (move_uploaded_file($_FILES['proof_file']['tmp_name'], $targetFilePath)) {
-                    $proofPath = 'uploads/payments/' . $fileName;
-                }
+            $pdo->beginTransaction();
+            $courseStmt = $pdo->prepare("SELECT price, currency FROM courses WHERE id = :id AND status = 'published' LIMIT 1");
+            $courseStmt->execute(['id' => $courseId]);
+            $course = $courseStmt->fetch();
+            if (!$course) {
+                throw new RuntimeException('This course is no longer available for purchase.');
             }
 
-            // Ensure enrollment record exists
-            $enr = $pdo->prepare("INSERT INTO enrollments (user_id, course_id, status) VALUES (:uid, :cid, 'pending') ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id)");
-            $enr->execute(['uid' => $user['id'], 'cid' => $courseId]);
-            $enrollmentId = $pdo->lastInsertId();
+            $existingEnrollmentStmt = $pdo->prepare("
+                SELECT id, status FROM enrollments
+                WHERE user_id = :user_id AND course_id = :course_id
+                LIMIT 1 FOR UPDATE
+            ");
+            $existingEnrollmentStmt->execute(['user_id' => $user['id'], 'course_id' => $courseId]);
+            $existingEnrollment = $existingEnrollmentStmt->fetch();
+            if ($existingEnrollment && in_array($existingEnrollment['status'], ['active', 'completed'], true)) {
+                throw new RuntimeException('You already have access to this course.');
+            }
 
-            // Insert payment record
+            $pendingPaymentStmt = $pdo->prepare("
+                SELECT id FROM payments
+                WHERE user_id = :user_id AND course_id = :course_id AND status = 'pending'
+                LIMIT 1 FOR UPDATE
+            ");
+            $pendingPaymentStmt->execute(['user_id' => $user['id'], 'course_id' => $courseId]);
+            if ($pendingPaymentStmt->fetch()) {
+                throw new RuntimeException('A payment for this course is already awaiting review. Check your payment history for its status.');
+            }
+
+            $duplicateReferenceStmt = $pdo->prepare("SELECT id FROM payments WHERE transaction_ref = :transaction_ref LIMIT 1");
+            $duplicateReferenceStmt->execute(['transaction_ref' => $txRef]);
+            if ($duplicateReferenceStmt->fetch()) {
+                throw new RuntimeException('This transaction reference has already been submitted. Check the reference and try again.');
+            }
+
+            $proofPath = null;
+            if (isset($_FILES['proof_file']) && $_FILES['proof_file']['error'] !== UPLOAD_ERR_NO_FILE) {
+                if ($_FILES['proof_file']['error'] !== UPLOAD_ERR_OK || $_FILES['proof_file']['size'] > 10 * 1024 * 1024) {
+                    throw new RuntimeException('The payment proof must upload successfully and be no larger than 10 MB.');
+                }
+                $extension = strtolower(pathinfo($_FILES['proof_file']['name'], PATHINFO_EXTENSION));
+                $mimeType = (new finfo(FILEINFO_MIME_TYPE))->file($_FILES['proof_file']['tmp_name']);
+                $proofTypes = [
+                    'pdf' => ['application/pdf'],
+                    'jpg' => ['image/jpeg'],
+                    'jpeg' => ['image/jpeg'],
+                    'png' => ['image/png'],
+                    'webp' => ['image/webp']
+                ];
+                if (!isset($proofTypes[$extension]) || !in_array($mimeType, $proofTypes[$extension], true)) {
+                    throw new RuntimeException('Upload payment proof as a PDF, JPG, PNG, or WebP image.');
+                }
+
+                $targetDir = __DIR__ . '/../uploads/payments/';
+                if (!is_dir($targetDir) && !mkdir($targetDir, 0750, true) && !is_dir($targetDir)) {
+                    throw new RuntimeException('The payment proof folder is unavailable. Please try again later.');
+                }
+                $fileName = bin2hex(random_bytes(16)) . '.' . $extension;
+                $savedProof = $targetDir . $fileName;
+                if (!move_uploaded_file($_FILES['proof_file']['tmp_name'], $savedProof)) {
+                    $savedProof = null;
+                    throw new RuntimeException('The payment proof could not be saved. Please try uploading it again.');
+                }
+                $proofPath = 'uploads/payments/' . $fileName;
+            }
+
+            $enr = $pdo->prepare("
+                INSERT INTO enrollments (user_id, course_id, status)
+                VALUES (:uid, :cid, 'pending')
+                ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), status = IF(status = 'cancelled', 'pending', status)
+            ");
+            $enr->execute(['uid' => $user['id'], 'cid' => $courseId]);
+            $enrollmentId = (int)$pdo->lastInsertId();
+
             $payStmt = $pdo->prepare("
                 INSERT INTO payments (enrollment_id, user_id, course_id, amount, currency, payment_method, transaction_ref, proof_file, status)
-                VALUES (:eid, :uid, :cid, :amount, 'RWF', :method, :txref, :proof, 'pending')
+                VALUES (:eid, :uid, :cid, :amount, :currency, :method, :txref, :proof, 'pending')
             ");
             $payStmt->execute([
                 'eid' => $enrollmentId ?: null,
                 'uid' => $user['id'],
                 'cid' => $courseId,
-                'amount' => $amount,
+                'amount' => $course['price'],
+                'currency' => $course['currency'] ?: 'RWF',
                 'method' => $method,
                 'txref' => $txRef,
                 'proof' => $proofPath
             ]);
+            $pdo->commit();
 
-            set_flash('success', "Payment receipt submitted successfully! Our accounting team will verify it shortly.");
-            header("Location: " . site_url('student/payment.php'));
+            set_flash('success', 'Payment receipt submitted successfully. It is now awaiting finance-team verification.');
+            header("Location: " . site_url('student/payment.php?course_id=' . $courseId));
             exit;
+        } catch (RuntimeException $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            if ($savedProof && is_file($savedProof)) {
+                unlink($savedProof);
+            }
+            $error = $e->getMessage();
         } catch (PDOException $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            if ($savedProof && is_file($savedProof)) {
+                unlink($savedProof);
+            }
             log_database_error('Submit payment', $e);
             $error = 'Your payment details could not be submitted. Please try again.';
         }
-    } else {
-        set_flash('success', "Payment proof recorded (Preview Mode)! Once approved, you will have instant access.");
-        header("Location: " . site_url('student/payment.php'));
-        exit;
     }
 }
 
-// Fetch user's previous payments
 $myPayments = [];
 if ($db_connected && $pdo) {
     try {
@@ -97,7 +172,8 @@ if ($db_connected && $pdo) {
         $pStmt->execute(['uid' => $user['id']]);
         $myPayments = $pStmt->fetchAll();
     } catch (PDOException $e) {
-        $myPayments = [];
+        log_database_error('Load student payment history', $e);
+        $historyError = 'Payment history could not be loaded. Please refresh the page.';
     }
 }
 
@@ -148,41 +224,21 @@ require_once __DIR__ . '/../includes/header.php';
         <?php if ($error): ?>
             <div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> <?= e($error); ?></div>
         <?php endif; ?>
+        <?php if ($paymentUnavailable): ?>
+            <div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> <?= e($paymentUnavailable); ?></div>
+        <?php endif; ?>
+        <?php if ($historyError): ?>
+            <div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> <?= e($historyError); ?></div>
+        <?php endif; ?>
 
         <!-- Payment Instructions Banner -->
         <div style="background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 2rem;">
-            <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; color: var(--gray-900);">
-                <i class="fas fa-wallet" style="color: var(--primary);"></i> How to Pay in Rwanda (RWF)
+            <h4 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; color: var(--gray-900);">
+                <i class="fas fa-wallet" style="color: var(--primary);"></i> Before making a payment
             </h4>
-            
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem;">
-                <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 1rem; border-radius: var(--radius-md);">
-                    <strong style="color: #92400e; font-size: 0.95rem;">MTN Mobile Money (MoMo)</strong>
-                    <p style="font-size: 0.85rem; color: #78350f; margin-top: 0.35rem;">
-                        Dial: <strong>*182*8*1*0788000001#</strong><br>
-                        Recipient: <strong>Digital Smart Class Ltd</strong><br>
-                        Save the SMS transaction ID.
-                    </p>
-                </div>
-
-                <div style="background: #fef2f2; border: 1px solid #fecaca; padding: 1rem; border-radius: var(--radius-md);">
-                    <strong style="color: #991b1b; font-size: 0.95rem;">Airtel Money</strong>
-                    <p style="font-size: 0.85rem; color: #7f1d1d; margin-top: 0.35rem;">
-                        Dial: <strong>*500*4*...</strong><br>
-                        Number: <strong>0730000002</strong><br>
-                        Keep the SMS confirmation reference.
-                    </p>
-                </div>
-
-                <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 1rem; border-radius: var(--radius-md);">
-                    <strong style="color: #1e40af; font-size: 0.95rem;">Bank of Kigali (BK)</strong>
-                    <p style="font-size: 0.85rem; color: #1e3a8a; margin-top: 0.35rem;">
-                        Account: <strong>00045-01234567-89</strong><br>
-                        Name: <strong>Digital Smart Class Ltd</strong><br>
-                        Upload deposit slip screenshot.
-                    </p>
-                </div>
-            </div>
+            <p style="color: var(--gray-600); margin: 0;">
+                Confirm the current official payment details with Smart Class support before sending money. Once paid, submit the transaction reference below; your course access is enabled only after the finance team verifies it.
+            </p>
 
             <div style="margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px dashed var(--gray-200); display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; justify-content: space-between;">
                 <span style="font-size: 0.9rem; color: var(--gray-600);">
@@ -202,12 +258,13 @@ require_once __DIR__ . '/../includes/header.php';
             </h3>
 
             <form action="<?= site_url('student/payment.php'); ?>" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="<?= e(csrf_token()); ?>">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
                     <div class="form-group">
                         <label class="form-label" for="course_id">Course Enrolling In *</label>
-                        <select name="course_id" id="course_id" class="form-control" required onchange="updateAmount(this)">
+                        <select name="course_id" id="course_id" class="form-control" required onchange="updateAmount(this)" <?= empty($courses) ? 'disabled' : ''; ?>>
                             <?php foreach ($courses as $c): ?>
-                                <option value="<?= $c['id']; ?>" data-price="<?= $c['price']; ?>" <?= $selectedCourseId == $c['id'] ? 'selected' : ''; ?>>
+                                <option value="<?= (int)$c['id']; ?>" data-price="<?= e($c['price']); ?>" data-currency="<?= e($c['currency'] ?? 'RWF'); ?>" <?= $selectedCourseId == $c['id'] ? 'selected' : ''; ?>>
                                     <?= e($c['title']); ?> (<?= format_money($c['price'], $c['currency'] ?? 'RWF'); ?>)
                                 </option>
                             <?php endforeach; ?>
@@ -215,8 +272,8 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label" for="amount">Tuition Amount (RWF) *</label>
-                        <input type="number" name="amount" id="amount" class="form-control" required value="30000">
+                        <label class="form-label" for="amount">Tuition Amount</label>
+                        <input type="text" id="amount" class="form-control" readonly value="">
                     </div>
                 </div>
 
@@ -239,11 +296,11 @@ require_once __DIR__ . '/../includes/header.php';
 
                 <div class="form-group">
                     <label class="form-label" for="proof_file">Optional Proof Screenshot (JPG, PNG, PDF)</label>
-                    <input type="file" name="proof_file" id="proof_file" class="form-control" accept="image/*,.pdf">
-                    <div class="form-hint">Upload a screenshot of the MoMo confirmation message or bank deposit slip for faster verification.</div>
+                    <input type="file" name="proof_file" id="proof_file" class="form-control" accept="image/jpeg,image/png,image/webp,application/pdf">
+                    <div class="form-hint">Optional: upload a PDF, JPG, PNG, or WebP proof image (maximum 10 MB).</div>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-lg" style="margin-top: 1rem;">
+                <button type="submit" class="btn btn-primary btn-lg" style="margin-top: 1rem;" <?= empty($courses) || !$db_connected ? 'disabled' : ''; ?>>
                     <i class="fas fa-check-circle"></i> Submit Payment for Approval
                 </button>
             </form>
@@ -306,9 +363,11 @@ function updateAmount(select) {
     const opt = select.options[select.selectedIndex];
     const price = opt.getAttribute('data-price');
     if (price) {
-        document.getElementById('amount').value = price;
+        const currency = opt.getAttribute('data-currency') || 'RWF';
+        document.getElementById('amount').value = `${Number(price).toLocaleString()} ${currency}`;
     }
 }
+updateAmount(document.getElementById('course_id'));
 </script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

@@ -63,7 +63,9 @@
     }
 
     .stats-grid,
-    .dashboard-grid-stats {
+    .dashboard-grid-stats,
+    .portal-stats-grid,
+    .admin-dashboard-stats {
         grid-template-columns: 1fr 1fr;
     }
 
@@ -91,6 +93,19 @@
         grid-template-columns: 1fr;
         gap: 0;
         border-radius: 22px;
+    }
+
+    .teacher-application-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .teacher-application-form-wide {
+        grid-column: auto;
+    }
+
+    .teacher-application-submit {
+        align-items: stretch;
+        flex-direction: column;
     }
 
     .promo-banner {
@@ -175,7 +190,10 @@
     }
 
     .stats-grid,
-    .dashboard-grid-stats {
+    .dashboard-grid-stats,
+    .portal-stats-grid,
+    .admin-dashboard-stats,
+    .admin-dashboard-secondary-stats {
         grid-template-columns: 1fr;
     }
 
@@ -183,6 +201,24 @@
         align-items: flex-start;
         flex-direction: column;
         gap: 0.15rem;
+    }
+
+    .teacher-application-card-heading {
+        align-items: flex-start;
+    }
+
+    .teacher-application-status {
+        gap: 0.7rem;
+        padding: 1rem;
+    }
+
+    .teacher-application-status-icon {
+        flex-basis: 38px;
+        height: 38px;
+    }
+
+    .application-review-actions .btn {
+        flex: 1 1 100%;
     }
 }
 
@@ -466,5 +502,37 @@
     .sidebar-close,
     .sidebar-overlay {
         display: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .notifications-heading,
+    .notification-item {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .notifications-heading-actions {
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .notifications-heading-actions form,
+    .notifications-heading-actions .btn {
+        width: 100%;
+    }
+
+    .notification-item {
+        position: relative;
+        padding: 1rem;
+    }
+
+    .notification-item-heading {
+        align-items: flex-start;
+    }
+
+    .notification-item-actions {
+        justify-content: flex-start;
+        width: 100%;
     }
 }

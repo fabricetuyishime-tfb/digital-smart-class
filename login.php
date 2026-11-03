@@ -16,18 +16,23 @@ if (is_logged_in()) {
 
 $error = null;
 
-$demoUsers = [
+$demoUsers = array_map(static function ($user) {
+    $user['demo_mode'] = true;
+    return $user;
+}, [
     'erc@gmail.com' => ['id' => 1, 'full_name' => 'Demo Admin', 'email' => 'erc@gmail.com', 'role_name' => 'admin', 'role_id' => 1],
     'teacher@digitalsmart.rw' => ['id' => 2, 'full_name' => 'Demo Teacher', 'email' => 'teacher@digitalsmart.rw', 'role_name' => 'teacher', 'role_id' => 2],
     'student@digitalsmart.rw' => ['id' => 3, 'full_name' => 'Demo Student', 'email' => 'student@digitalsmart.rw', 'role_name' => 'student', 'role_id' => 3],
     'accountant@digitalsmart.rw' => ['id' => 4, 'full_name' => 'Demo Accountant', 'email' => 'accountant@digitalsmart.rw', 'role_name' => 'accountant', 'role_id' => 4],
-];
+]);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    if (empty($email) || empty($password)) {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
+        $error = 'Your session expired. Refresh the page and try signing in again.';
+    } elseif (empty($email) || empty($password)) {
         $error = "Please enter both your email address and password.";
     } elseif ($db_connected && $pdo) {
         try {
@@ -53,7 +58,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($user && ($isDemoLogin || password_verify($password, $user['password']))) {
                 if ($user['status'] !== 'active') {
-                    $error = "Your account is currently " . htmlspecialchars($user['status']) . ". Please contact support.";
+                    $applicationStmt = $pdo->prepare("
+                        SELECT status FROM teacher_applications
+                        WHERE user_id = :uid
+                        ORDER BY id DESC
+                        LIMIT 1
+                    ");
+                    $applicationStmt->execute(['uid' => $user['id']]);
+                    $applicationStatus = $applicationStmt->fetchColumn();
+
+                    if ($user['role_name'] === 'teacher'
+                        && $user['status'] === 'pending'
+                        && $applicationStatus === 'approved') {
+                        $activateApprovedTeacher = $pdo->prepare("
+                            UPDATE users
+                            SET status = 'active'
+                            WHERE id = :uid AND role_id = 2 AND status = 'pending'
+                        ");
+                        $activateApprovedTeacher->execute(['uid' => $user['id']]);
+
+                        if ($activateApprovedTeacher->rowCount() > 0) {
+                            $user['status'] = 'active';
+                        } else {
+                            $statusStmt = $pdo->prepare("SELECT status FROM users WHERE id = :uid LIMIT 1");
+                            $statusStmt->execute(['uid' => $user['id']]);
+                            $user['status'] = $statusStmt->fetchColumn() ?: $user['status'];
+                        }
+                    }
+
+                    if ($user['status'] === 'active') {
+                        login_user($user);
+                        set_flash('success', "Welcome back, " . $user['full_name'] . "!");
+                        header("Location: " . site_url('teacher/dashboard.php'));
+                        exit;
+                    }
+
+                    if ($user['role_name'] === 'teacher' && in_array($applicationStatus, ['pending', 'rejected'], true)) {
+                        login_user($user);
+                        set_flash('info', $applicationStatus === 'pending'
+                            ? 'Your teacher application is still awaiting administrator review.'
+                            : 'Your teacher application was not approved. Review the status and resubmit if you wish.');
+                        header("Location: " . site_url('teacher/application.php'));
+                        exit;
+                    }
+
+                    $error = "Your account is currently " . e($user['status']) . ". Please contact support.";
                 } else {
                     login_user($user);
                     set_flash('success', "Welcome back, " . $user['full_name'] . "!");
@@ -120,6 +169,7 @@ require_once __DIR__ . '/includes/header.php';
         <?php endif; ?>
 
         <form action="<?= site_url('login.php'); ?>" method="POST">
+            <input type="hidden" name="csrf_token" value="<?= e(csrf_token()); ?>">
             <div class="form-group">
                 <label class="form-label" for="email">Email Address</label>
                 <input type="email" name="email" id="email" class="form-control" required placeholder="you@example.com" value="<?= e($_POST['email'] ?? ''); ?>">

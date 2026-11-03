@@ -77,6 +77,7 @@ function login_user($user) {
     $_SESSION['user_email']   = $user['email'];
     $_SESSION['user_role']    = $user['role_name'] ?? 'student';
     $_SESSION['user_role_id'] = $user['role_id'] ?? 3;
+    $_SESSION['demo_mode']    = !empty($user['demo_mode']);
 }
 
 /**

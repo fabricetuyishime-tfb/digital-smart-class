@@ -7,6 +7,8 @@ $page_title = "TEACHER DASHBOARD — DIGITAL SMART CLASS";
 $myCourses = [];
 $totalStudents = 0;
 $publishedCount = 0;
+$dashboardError = null;
+$demoMode = !empty($_SESSION['demo_mode']);
 
 if ($db_connected && $pdo) {
     try {
@@ -25,19 +27,19 @@ if ($db_connected && $pdo) {
             if ($mc['status'] === 'published') $publishedCount++;
         }
     } catch (PDOException $e) {
-        $myCourses = [];
+        log_database_error('Load teacher dashboard', $e);
+        $dashboardError = 'Course information could not be loaded. Please refresh the page.';
     }
 }
 
-// Fallback demo matching Section 13 mockup
-if (empty($myCourses)) {
+if (!$db_connected && $demoMode) {
     $myCourses = [
-        ['id' => 1, 'title' => 'YouTube Beginner', 'student_count' => 45],
-        ['id' => 2, 'title' => 'YouTube Shorts', 'student_count' => 30],
-        ['id' => 3, 'title' => 'AI Long Videos', 'student_count' => 25],
+        ['id' => 1, 'title' => 'YouTube Beginner', 'student_count' => 45, 'status' => 'published'],
+        ['id' => 2, 'title' => 'YouTube Shorts', 'student_count' => 30, 'status' => 'published'],
+        ['id' => 3, 'title' => 'AI Long Videos', 'student_count' => 25, 'status' => 'draft'],
     ];
     $totalStudents = 120;
-    $publishedCount = 4;
+    $publishedCount = 2;
 }
 
 require_once __DIR__ . '/../includes/header.php';
@@ -67,6 +69,9 @@ require_once __DIR__ . '/../includes/header.php';
     </aside>
 
     <main class="dashboard-main">
+        <?php if ($dashboardError): ?>
+            <div class="alert alert-danger" role="alert"><?= e($dashboardError); ?></div>
+        <?php endif; ?>
         <div class="dashboard-title-bar">
             <div>
                 <h2>Welcome, Teacher!</h2>
@@ -77,19 +82,18 @@ require_once __DIR__ . '/../includes/header.php';
             </a>
         </div>
 
-        <!-- 3 Stats Cards (Section 13 Mockup) -->
-        <div class="dashboard-grid-stats" style="grid-template-columns: repeat(3, 1fr); max-width: 650px;">
+        <div class="dashboard-grid-stats portal-stats-grid">
             <div class="stat-box">
                 <div class="stat-box-title">My Courses</div>
-                <div class="stat-box-value"><?= count($myCourses) ?: 5; ?></div>
+                <div class="stat-box-value"><?= count($myCourses); ?></div>
             </div>
             <div class="stat-box">
                 <div class="stat-box-title">Students</div>
-                <div class="stat-box-value" style="color: var(--primary);"><?= $totalStudents ?: 120; ?></div>
+                <div class="stat-box-value" style="color: var(--primary);"><?= $totalStudents; ?></div>
             </div>
             <div class="stat-box">
                 <div class="stat-box-title">Published</div>
-                <div class="stat-box-value" style="color: var(--success);"><?= $publishedCount ?: 4; ?></div>
+                <div class="stat-box-value" style="color: var(--success);"><?= $publishedCount; ?></div>
             </div>
         </div>
 
@@ -100,6 +104,13 @@ require_once __DIR__ . '/../includes/header.php';
             </h3>
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+                <?php if (empty($myCourses)): ?>
+                    <div class="dashboard-empty-state">
+                        <h4>No courses yet</h4>
+                        <p>Create your first course to start building your learning program.</p>
+                        <a href="<?= site_url('teacher/create-course.php'); ?>" class="btn btn-primary">Create your first course</a>
+                    </div>
+                <?php endif; ?>
                 <?php foreach ($myCourses as $c): ?>
                     <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.75rem; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
                         <div>
@@ -107,7 +118,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 <?= e($c['title']); ?>
                             </h4>
                             <p style="font-size: 0.95rem; color: #64748b; font-weight: 600; margin-bottom: 1.25rem;">
-                                <?= $c['student_count'] ?? 30; ?> Students
+                                <?= (int)($c['student_count'] ?? 0); ?> Students
                             </p>
                         </div>
                         <div style="display: flex; gap: 0.5rem;">

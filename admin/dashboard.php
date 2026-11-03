@@ -3,36 +3,27 @@ require_once __DIR__ . '/../includes/admin-auth.php';
 $user = current_user();
 $page_title = "ADMIN DASHBOARD — DIGITAL SMART CLASS";
 
-// Fetch real metrics from DB
-$studentsCount = 1250;
-$teachersCount = 45;
-$coursesCount = 80;
-$pendingTeachersCount = 6;
-$pendingPaymentsCount = 12;
-$totalRevenueFormatted = "5.4M RWF";
+$demoMode = !empty($_SESSION['demo_mode']);
+$studentsCount = 0;
+$teachersCount = 0;
+$coursesCount = 0;
+$pendingTeachersCount = 0;
+$pendingPaymentsCount = 0;
+$totalRevenueFormatted = '0 RWF';
 $activeEnrollmentsCount = 0;
 $completedEnrollmentsCount = 0;
 $recentPayments = [];
+$dashboardError = null;
 
 if ($db_connected && $pdo) {
     try {
-        $sc = $pdo->query("SELECT COUNT(*) FROM users WHERE role_id = 3")->fetchColumn();
-        if ($sc > 0) $studentsCount = $sc;
-
-        $tc = $pdo->query("SELECT COUNT(*) FROM users WHERE role_id = 2 AND status = 'active'")->fetchColumn();
-        if ($tc > 0) $teachersCount = $tc;
-
-        $cc = $pdo->query("SELECT COUNT(*) FROM courses")->fetchColumn();
-        if ($cc > 0) $coursesCount = $cc;
-
-        $ptc = $pdo->query("SELECT COUNT(*) FROM teacher_applications WHERE status = 'pending'")->fetchColumn();
-        if ($ptc !== false) $pendingTeachersCount = $ptc;
-
-        $ppc = $pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'pending'")->fetchColumn();
-        if ($ppc !== false) $pendingPaymentsCount = $ppc;
-
-        $rev = $pdo->query("SELECT SUM(amount) FROM payments WHERE status = 'approved'")->fetchColumn();
-        if ($rev > 0) $totalRevenueFormatted = number_format($rev) . " RWF";
+        $studentsCount = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role_id = 3")->fetchColumn();
+        $teachersCount = (int)$pdo->query("SELECT COUNT(*) FROM users WHERE role_id = 2 AND status = 'active'")->fetchColumn();
+        $coursesCount = (int)$pdo->query("SELECT COUNT(*) FROM courses")->fetchColumn();
+        $pendingTeachersCount = (int)$pdo->query("SELECT COUNT(*) FROM teacher_applications WHERE status = 'pending'")->fetchColumn();
+        $pendingPaymentsCount = (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'pending'")->fetchColumn();
+        $revenue = (float)$pdo->query("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status = 'approved'")->fetchColumn();
+        $totalRevenueFormatted = number_format($revenue) . ' RWF';
 
         $activeEnrollmentsCount = (int)$pdo->query("SELECT COUNT(*) FROM enrollments WHERE status = 'active'")->fetchColumn();
         $completedEnrollmentsCount = (int)$pdo->query("SELECT COUNT(*) FROM enrollments WHERE status = 'completed'")->fetchColumn();
@@ -45,8 +36,18 @@ if ($db_connected && $pdo) {
             LIMIT 5
         ")->fetchAll();
     } catch (PDOException $e) {
-        // Fallback to Section 14 mock values
+        log_database_error('Load admin dashboard', $e);
+        $dashboardError = 'Platform metrics could not be loaded. Please refresh the page.';
     }
+} elseif ($demoMode) {
+    $studentsCount = 1250;
+    $teachersCount = 45;
+    $coursesCount = 80;
+    $pendingTeachersCount = 6;
+    $pendingPaymentsCount = 12;
+    $totalRevenueFormatted = '5.4M RWF';
+    $activeEnrollmentsCount = 1120;
+    $completedEnrollmentsCount = 840;
 }
 
 require_once __DIR__ . '/../includes/header.php';
@@ -83,6 +84,9 @@ require_once __DIR__ . '/../includes/header.php';
     </aside>
 
     <main class="dashboard-main">
+        <?php if ($dashboardError): ?>
+            <div class="alert alert-danger" role="alert"><?= e($dashboardError); ?></div>
+        <?php endif; ?>
         <div class="dashboard-title-bar">
             <div>
                 <h2>Welcome, Administrator</h2>
@@ -90,8 +94,7 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
         </div>
 
-        <!-- 6 Stats Cards (Section 14 Mockup) -->
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-bottom: 1.25rem; max-width: 800px;">
+        <div class="dashboard-grid-stats admin-dashboard-stats">
             <div class="stat-box">
                 <div class="stat-box-title">Students</div>
                 <div class="stat-box-value"><?= number_format($studentsCount); ?></div>
@@ -106,7 +109,7 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-bottom: 2.5rem; max-width: 800px;">
+        <div class="dashboard-grid-stats admin-dashboard-stats admin-dashboard-stats-spaced">
             <div class="stat-box">
                 <div class="stat-box-title">Pending Teachers</div>
                 <div class="stat-box-value" style="color: var(--accent);"><?= number_format($pendingTeachersCount); ?></div>
@@ -121,7 +124,7 @@ require_once __DIR__ . '/../includes/header.php';
             </div>
         </div>
 
-        <div class="dashboard-grid-stats" style="grid-template-columns: repeat(2, minmax(180px, 1fr)); max-width: 540px; margin-bottom: 2.5rem;">
+        <div class="dashboard-grid-stats admin-dashboard-secondary-stats">
             <div class="stat-box">
                 <div class="stat-box-title">Active Enrollments</div>
                 <div class="stat-box-value" style="color: var(--secondary);"><?= number_format($activeEnrollmentsCount); ?></div>
@@ -166,6 +169,9 @@ require_once __DIR__ . '/../includes/header.php';
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
                 <a href="<?= site_url('admin/students.php'); ?>" class="btn btn-outline" style="padding: 1rem; font-weight: 700;">
                     [Manage Students]
+                </a>
+                <a href="<?= site_url('admin/teacher-applications.php'); ?>" class="btn btn-outline" style="padding: 1rem; font-weight: 700;">
+                    <i class="fas fa-id-card"></i> Review Teacher Applications
                 </a>
                 <a href="<?= site_url('admin/teachers.php'); ?>" class="btn btn-outline" style="padding: 1rem; font-weight: 700;">
                     [Manage Teachers]

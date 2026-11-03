@@ -5,7 +5,17 @@ require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/auth.php';
 
 if (is_logged_in()) {
-    header("Location: " . site_url('student/dashboard.php'));
+    $role = $_SESSION['user_role'] ?? 'student';
+    if ($role === 'admin') {
+        $dashboard = 'admin/dashboard.php';
+    } elseif ($role === 'teacher') {
+        $dashboard = 'teacher/dashboard.php';
+    } elseif ($role === 'accountant') {
+        $dashboard = 'accountant/dashboard.php';
+    } else {
+        $dashboard = 'student/dashboard.php';
+    }
+    header("Location: " . site_url($dashboard));
     exit;
 }
 
@@ -18,7 +28,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
 
-    if (empty($full_name) || empty($email) || empty($password)) {
+    if (!verify_csrf_token($_POST['csrf_token'] ?? '')) {
+        $error = 'Your session expired. Refresh the page and submit the form again.';
+    } elseif (empty($full_name) || empty($email) || empty($password)) {
         $error = "Please fill in all required fields.";
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = "Please provide a valid email address.";
@@ -96,6 +108,7 @@ require_once __DIR__ . '/includes/header.php';
         <?php endif; ?>
 
         <form action="<?= site_url('register.php'); ?>" method="POST">
+            <input type="hidden" name="csrf_token" value="<?= e(csrf_token()); ?>">
             <div class="form-group">
                 <label class="form-label" for="full_name">Full Name *</label>
                 <input type="text" name="full_name" id="full_name" class="form-control" required placeholder="e.g. Jean Eric Ndayisaba" value="<?= e($_POST['full_name'] ?? ''); ?>">

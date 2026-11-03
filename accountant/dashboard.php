@@ -3,32 +3,31 @@ require_once __DIR__ . '/../includes/accountant-auth.php';
 $user = current_user();
 $page_title = "ACCOUNTANT DASHBOARD — DIGITAL SMART CLASS";
 
-// Metrics matching Section 15
-$totalPayments = 500;
-$pendingPayments = 12;
-$approvedPayments = 470;
-$rejectedPayments = 18;
-$totalRevenue = 5400000;
+$demoMode = !empty($_SESSION['demo_mode']);
+$totalPayments = 0;
+$pendingPayments = 0;
+$approvedPayments = 0;
+$rejectedPayments = 0;
+$totalRevenue = 0;
+$dashboardError = null;
 
 if ($db_connected && $pdo) {
     try {
-        $tp = $pdo->query("SELECT COUNT(*) FROM payments")->fetchColumn();
-        if ($tp > 0) $totalPayments = $tp;
-
-        $pp = $pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'pending'")->fetchColumn();
-        if ($pp !== false) $pendingPayments = $pp;
-
-        $ap = $pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'approved'")->fetchColumn();
-        if ($ap !== false) $approvedPayments = $ap;
-
-        $rp = $pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'rejected'")->fetchColumn();
-        if ($rp !== false) $rejectedPayments = $rp;
-
-        $rev = $pdo->query("SELECT SUM(amount) FROM payments WHERE status = 'approved'")->fetchColumn();
-        if ($rev > 0) $totalRevenue = $rev;
+        $totalPayments = (int)$pdo->query("SELECT COUNT(*) FROM payments")->fetchColumn();
+        $pendingPayments = (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'pending'")->fetchColumn();
+        $approvedPayments = (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'approved'")->fetchColumn();
+        $rejectedPayments = (int)$pdo->query("SELECT COUNT(*) FROM payments WHERE status = 'rejected'")->fetchColumn();
+        $totalRevenue = (float)$pdo->query("SELECT COALESCE(SUM(amount), 0) FROM payments WHERE status = 'approved'")->fetchColumn();
     } catch (PDOException $e) {
-        // Fallback to Section 15 mockup values
+        log_database_error('Load accountant dashboard metrics', $e);
+        $dashboardError = 'Payment metrics could not be loaded. Please refresh the page.';
     }
+} elseif ($demoMode) {
+    $totalPayments = 500;
+    $pendingPayments = 12;
+    $approvedPayments = 470;
+    $rejectedPayments = 18;
+    $totalRevenue = 5400000;
 }
 
 // Fetch recent transactions
@@ -45,7 +44,8 @@ if ($db_connected && $pdo) {
         ");
         $transactions = $stmt->fetchAll();
     } catch (PDOException $e) {
-        $transactions = [];
+        log_database_error('Load recent accountant transactions', $e);
+        $dashboardError = 'Recent transactions could not be loaded.';
     }
 }
 
@@ -76,6 +76,9 @@ require_once __DIR__ . '/../includes/header.php';
     </aside>
 
     <main class="dashboard-main">
+        <?php if ($dashboardError): ?>
+            <div class="alert alert-danger" role="alert"><?= e($dashboardError); ?></div>
+        <?php endif; ?>
         <div class="dashboard-title-bar">
             <div>
                 <h2>ACCOUNTANT DASHBOARD</h2>
@@ -131,26 +134,7 @@ require_once __DIR__ . '/../includes/header.php';
                     </thead>
                     <tbody>
                         <?php if (empty($transactions)): ?>
-                            <tr>
-                                <td><strong>Aline Uwase</strong></td>
-                                <td>YouTube Shorts Creation — From Idea to Short</td>
-                                <td>30,000 RWF</td>
-                                <td>MTN Mobile Money</td>
-                                <td><code>MP241004.1022.B991</code></td>
-                                <td><span class="badge badge-approved">Approved</span></td>
-                                <td><span style="font-size: 0.8rem; color: #64748b;">Verified</span></td>
-                            </tr>
-                            <tr>
-                                <td><strong>Fabrice Learner</strong></td>
-                                <td>Understand YouTube — Beginner to Confident Creator</td>
-                                <td>30,000 RWF</td>
-                                <td>MTN Mobile Money</td>
-                                <td><code>MP241004.1144.C318</code></td>
-                                <td><span class="badge badge-pending">Pending</span></td>
-                                <td>
-                                    <a href="<?= site_url('accountant/payments.php'); ?>" class="btn btn-sm btn-success">Verify</a>
-                                </td>
-                            </tr>
+                            <tr><td colspan="7" class="table-empty-state">No payment transactions to display yet.</td></tr>
                         <?php else: ?>
                             <?php foreach ($transactions as $t): ?>
                                 <tr>

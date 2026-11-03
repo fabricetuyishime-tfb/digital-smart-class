@@ -7,6 +7,11 @@
         grid-template-columns: 1fr;
     }
 
+    .dashboard-promo-card {
+        grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+        gap: 0.5rem;
+    }
+
     .curriculum-sidebar {
         max-height: 400px;
     }
@@ -84,14 +89,91 @@
     .dashboard-promo-card,
     .promo-banner-inner {
         grid-template-columns: 1fr;
+        gap: 0;
+        border-radius: 22px;
+    }
+
+    .promo-banner {
+        padding: 1.5rem 0 0.25rem;
+    }
+
+    .promo-copy {
+        padding: 1.5rem;
+    }
+
+    .promo-copy h2 {
+        font-size: clamp(2rem, 8vw, 3.25rem);
+    }
+
+    .promo-copy p {
+        font-size: 0.95rem;
+    }
+
+    .promo-visual {
+        padding: 0 1rem 1rem;
+    }
+
+    .promo-visual img,
+    .dashboard-promo-image img {
+        width: 100%;
+        height: auto;
+        border-radius: 14px;
     }
 
     .dashboard-promo-copy {
-        padding: 0.75rem;
+        padding: 0.75rem 0.5rem;
+    }
+
+    .dashboard-promo-copy h3 {
+        font-size: clamp(1.7rem, 7vw, 2.4rem);
+    }
+
+    .dashboard-promo-image {
+        padding: 0 0.5rem 0.5rem;
+    }
+
+    .promo-actions .btn,
+    .dashboard-promo-actions .btn {
+        min-height: 44px;
     }
 }
 
 @media (max-width: 480px) {
+    .promo-banner-inner,
+    .dashboard-promo-card {
+        border-radius: 18px;
+    }
+
+    .promo-copy {
+        padding: 1.25rem 1rem;
+    }
+
+    .promo-kicker {
+        font-size: 0.65rem;
+        letter-spacing: 0.08em;
+    }
+
+    .promo-copy h2 {
+        font-size: clamp(1.8rem, 9vw, 2.5rem);
+        letter-spacing: -0.045em;
+    }
+
+    .promo-actions,
+    .dashboard-promo-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .promo-actions .btn,
+    .dashboard-promo-actions .btn {
+        width: 100%;
+        white-space: normal;
+    }
+
+    .promo-visual {
+        padding: 0 0.65rem 0.65rem;
+    }
+
     .stats-grid,
     .dashboard-grid-stats {
         grid-template-columns: 1fr;
@@ -109,6 +191,11 @@
    Professional off-canvas navigation drawer
    ============================================================ */
 @media (max-width: 900px) {
+    html,
+    body {
+        overflow-x: clip;
+    }
+
     body.nav-open {
         overflow: hidden;
     }
